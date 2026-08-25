@@ -1,0 +1,46 @@
+raw_currency,domain_suffix,currency_code,currency_name
+$,.com.ar,ARS,Argentine Peso
+AU $,*,AUD,Australian Dollar
+лв.,*,BGN,Bulgarian Lev
+BOB Bs,*,BOB,Boliviano
+R$,*,BRL,Brazilian Real
+CAD $,*,CAD,Canadian Dollar
+CHF,*,CHF,Swiss Franc
+CLP,*,CLP,Chilean Peso
+￥,.cn,CNY,Chinese Yuan
+COP $,*,COP,Colombian Peso
+CRC ₡,*,CRC,Costa Rican Colón
+Kč,*,CZK,Czech Koruna
+kr,.dk,DKK,Danish Krone
+DOP $,*,DOP,Dominican Peso
+�,.be,EUR,Euro
+�,.ee,EUR,Euro
+�,.es,EUR,Euro
+�,.ie,EUR,Euro
+�,.nl,EUR,Euro
+�,.sk,EUR,Euro
+�,.co.uk,GBP,British Pound Sterling
+GTQ Q,*,GTQ,Guatemalan Quetzal
+$,.hk,HKD,Hong Kong Dollar
+HKD $,*,HKD,Hong Kong Dollar
+kn,*,HRK,Croatian Kuna
+Ft,*,HUF,Hungarian Forint
+₹,*,INR,Indian Rupee
+￥,.jp,JPY,Japanese Yen
+د.ك.‏,*,KWD,Kuwaiti Dinar
+Lei,*,MDL,Moldovan Leu
+MXN $,*,MXN,Mexican Peso
+kr,.no,NOK,Norwegian Krone
+NZD $,*,NZD,New Zealand Dollar
+PEN S/.,*,PEN,Peruvian Sol
+₱,*,PHP,Philippine Peso
+zł,*,PLN,Polish Złoty
+₲,*,PYG,Paraguayan Guaraní
+din.,*,RSD,Serbian Dinar
+kr,.se,SEK,Swedish Krona
+SGD $,*,SGD,Singapore Dollar
+₺,*,TRY,Turkish Lira
+$,.com,USD,United States Dollar
+USD $,*,USD,United States Dollar
+UYU,*,UYU,Uruguayan Peso
+₫,*,VND,Vietnamese Đồng
