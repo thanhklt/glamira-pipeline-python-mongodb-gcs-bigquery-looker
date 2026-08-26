@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: landing
+    database: glamira-project-502214
+    schema: landing
+    tables:
+      - name: raw_mongo
+      - name: raw_location
+      - name: raw_product
+
+seeds:
+  - name: currency_mapping
+    description: Gemini-generated mapping from raw checkout currency values to ISO 4217.
+    columns:
+      - name: raw_currency
+        tests: [not_null]
+      - name: domain_suffix
+        tests: [not_null]
+      - name: currency_code
+        tests: [not_null]
+      - name: currency_name
+        tests: [not_null]

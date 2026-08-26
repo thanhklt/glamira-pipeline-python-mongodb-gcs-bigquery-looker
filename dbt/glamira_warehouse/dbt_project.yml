@@ -31,7 +31,7 @@ clean-targets:         # directories to be removed by `dbt clean`
 models:
   glamira_warehouse:
     staging:
-      +materialized: table
+      +materialized: view
       +schema: staging
 
 seeds:
