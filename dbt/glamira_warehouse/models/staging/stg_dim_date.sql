@@ -15,7 +15,7 @@ stg_dim_date__cast_type AS (
 ),
 
 stg_dim_date__get_date AS (
-    SELECT cast(format_date('%Y-%m-%d', local_time) AS date) AS full_date 
+    SELECT cast(format_date('%Y-%m-%d', local_time) AS date) AS full_date
     FROM stg_dim_date__cast_type
 ),
 
@@ -33,7 +33,7 @@ stg_dim_date__valid AS (
 
 stg_dim_date__extract AS (
     SELECT 
-        full_date,
+        full_date AS date_key,
         extract(dayofweek from full_date) as day_of_week,
         format_date('%A', full_date) as day_name,
         extract(day from full_date) as day_of_month,
@@ -45,15 +45,6 @@ stg_dim_date__extract AS (
         extract(year from full_date) as year_number,
         extract(dayofweek from full_date) in (1, 7) as is_weekend
     FROM stg_dim_date__valid
-),
-
-
-
-stg_dim_date__genkey AS (
-    SELECT
-        farm_fingerprint(cast(format_date('%Y%m%d', full_date) AS STRING)) AS date_key,
-        *
-    FROM stg_dim_date__extract
 )
 
-SELECT * FROM stg_dim_date__genkey
+SELECT * FROM stg_dim_date__extract

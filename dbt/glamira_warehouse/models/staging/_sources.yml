@@ -8,7 +8,8 @@ sources:
       - name: raw_mongo
       - name: raw_location
       - name: raw_product
-
+      - name: raw_exchange_rate
+      
 seeds:
   - name: currency_mapping
     description: Gemini-generated mapping from raw checkout currency values to ISO 4217.
