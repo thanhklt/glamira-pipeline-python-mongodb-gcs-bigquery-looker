@@ -15,9 +15,7 @@ seeds:
     description: Gemini-generated mapping from raw checkout currency values to ISO 4217.
     columns:
       - name: raw_currency
-        tests: [not_null]
-      - name: domain_suffix
-        tests: [not_null]
+        tests: [not_null, unique]
       - name: currency_code
         tests: [not_null]
       - name: currency_name

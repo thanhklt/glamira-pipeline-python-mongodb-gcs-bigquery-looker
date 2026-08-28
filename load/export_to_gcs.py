@@ -28,6 +28,9 @@ PARQUET_LEAF_TYPE = pa.string()
 DEFAULT_JSONL_EXPORTS = {
     "location_data/locations.jsonl": Path(__file__).resolve().parent.parent / "data" / "locations.jsonl",
     "product_data/products.jsonl": Path(__file__).resolve().parent.parent / "data" / "products.jsonl",
+    "exchange_rate_data/exchange_rate.jsonl": (
+        Path(__file__).resolve().parent.parent / "data" / "exchange_rate.jsonl"
+    ),
 }
 
 
@@ -372,7 +375,7 @@ def _upload_parquet(bucket: Any, prefix: str, number: int, path: Path, batch: li
 
 
 def upload_jsonl_exports(bucket: Any, files: Mapping[str, Path]) -> tuple[str, ...]:
-    """Upload crawler JSONL outputs to the bucket root, replacing old objects."""
+    """Upload crawler JSONL outputs to their configured object paths, replacing old objects."""
     missing = [str(path) for path in files.values() if not path.is_file()]
     if missing:
         raise FileNotFoundError(

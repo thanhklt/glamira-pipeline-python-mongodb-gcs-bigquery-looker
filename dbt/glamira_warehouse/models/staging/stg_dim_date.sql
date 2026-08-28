@@ -19,7 +19,7 @@ stg_dim_date__get_date AS (
     FROM stg_dim_date__cast_type
 ),
 
-stg_dim_date__distinct AS (
+stg_dim_date__dedupe AS (
     SELECT DISTINCT *
     FROM stg_dim_date__get_date
 ),
@@ -27,7 +27,7 @@ stg_dim_date__distinct AS (
 -- Có ngày 2026-01-07
 stg_dim_date__valid AS (
     SELECT *
-    FROM stg_dim_date__distinct
+    FROM stg_dim_date__dedupe
     WHERE full_date <= CURRENT_DATE("Asia/Saigon")
 ),
 

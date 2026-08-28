@@ -47,10 +47,6 @@ def fetch_currency_context(args: argparse.Namespace) -> list[dict[str, Any]]:
     query = f"""
         select
             trim(cart_product.currency) as raw_currency,
-            array_agg(
-                distinct lower(regexp_extract(raw.current_url, r'^https?://([^/:]+)'))
-                ignore nulls
-            ) as domains,
             count(*) as occurrences
         from `{table_id}` as raw
         cross join unnest(raw.cart_products) as cart_product
@@ -68,14 +64,14 @@ def build_prompt(context: list[dict[str, Any]]) -> str:
     return f"""
 Map the aggregated Glamira checkout currency values below to ISO 4217 currencies.
 Return JSON only: an array of objects with exactly these string fields:
-raw_currency, domain_suffix, currency_code, currency_name.
+raw_currency, currency_code, currency_name.
 
 Rules:
 - currency_code must be an uppercase ISO 4217 alpha-3 code.
 - currency_name must be the official English currency name.
-- Use domain_suffix "*" only when raw_currency is unambiguous across countries.
-- For ambiguous values such as $, kr, the replacement character, or yen symbols,
-  emit one row per country domain suffix (for example ".no").
+- Emit at most one mapping for each raw_currency value.
+- Decide the most likely currency using raw_currency only. Do not use domains or
+  emit multiple country-specific mappings for ambiguous symbols.
 - Ignore local, dev, stage, empty, or insufficiently supported contexts.
 - Never invent a raw_currency value that is absent from the input.
 - Do not include markdown or explanations.
@@ -124,44 +120,37 @@ def call_gemini(api_key: str, model: str, prompt: str) -> list[dict[str, str]]:
 def validate_mappings(
     mappings: list[dict[str, str]], context: list[dict[str, Any]]
 ) -> list[dict[str, str]]:
-    observed = {item["raw_currency"]: set(item["domains"]) for item in context}
-    validated: dict[tuple[str, str], dict[str, str]] = {}
-    required = {"raw_currency", "domain_suffix", "currency_code", "currency_name"}
+    observed = {item["raw_currency"] for item in context}
+    validated: dict[str, dict[str, str]] = {}
+    required = {"raw_currency", "currency_code", "currency_name"}
 
     for row in mappings:
         if not isinstance(row, dict) or set(row) != required:
             raise ValueError(f"Invalid mapping shape: {row!r}")
         clean = {key: str(row[key]).strip() for key in required}
         raw_currency = clean["raw_currency"]
-        suffix = clean["domain_suffix"].lower()
         code = clean["currency_code"].upper()
         if raw_currency not in observed:
             raise ValueError(f"Gemini invented raw currency: {raw_currency!r}")
         if not re.fullmatch(r"[A-Z]{3}", code):
             raise ValueError(f"Invalid ISO currency code: {code!r}")
-        if suffix != "*" and not any(
-            domain and domain.endswith(suffix) for domain in observed[raw_currency]
-        ):
-            raise ValueError(
-                f"Domain suffix {suffix!r} was not observed for {raw_currency!r}"
-            )
-        clean["domain_suffix"] = suffix
         clean["currency_code"] = code
-        key = (raw_currency, suffix)
-        if key in validated and validated[key] != clean:
-            raise ValueError(f"Conflicting Gemini mappings for {key!r}")
-        validated[key] = clean
+        if raw_currency in validated and validated[raw_currency] != clean:
+            raise ValueError(
+                f"Conflicting Gemini mappings for {raw_currency!r}"
+            )
+        validated[raw_currency] = clean
 
     return sorted(
         validated.values(),
-        key=lambda row: (row["currency_code"], row["raw_currency"], row["domain_suffix"]),
+        key=lambda row: (row["currency_code"], row["raw_currency"]),
     )
 
 
 def write_seed(rows: list[dict[str, str]], output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(output.suffix + ".tmp")
-    columns = ["raw_currency", "domain_suffix", "currency_code", "currency_name"]
+    columns = ["raw_currency", "currency_code", "currency_name"]
     with temporary.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=columns)
         writer.writeheader()

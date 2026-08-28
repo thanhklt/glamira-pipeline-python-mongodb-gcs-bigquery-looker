@@ -10,6 +10,7 @@ from bson import ObjectId
 from google.api_core.exceptions import NotFound
 
 from load.export_to_gcs import (
+    DEFAULT_JSONL_EXPORTS,
     batched,
     documents_to_table,
     export_to_gcs,
@@ -74,6 +75,12 @@ class _FakeStorageClient:
 
 
 class LoadTests(unittest.TestCase):
+    def test_default_jsonl_exports_include_exchange_rates_folder(self):
+        exchange_rates = DEFAULT_JSONL_EXPORTS["exchange_rate_data/exchange_rate.jsonl"]
+
+        self.assertEqual(exchange_rates.name, "exchange_rate.jsonl")
+        self.assertEqual(exchange_rates.parent.name, "data")
+
     def test_parses_gcs_uri(self):
         location = parse_gcs_uri("gs://raw_glamira/mongodb_data/")
 

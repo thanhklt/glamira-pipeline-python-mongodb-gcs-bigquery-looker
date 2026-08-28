@@ -24,7 +24,7 @@ exchange_rate__cast_type AS (
 ),
 
 exchange_rate__flattened AS (
-    SELECT DISTINCT
+    SELECT
         cast_type.date_key,
         UPPER(currency_code) AS currency_code,
         LAX_FLOAT64(cast_type.rates_json[currency_code]) AS rate_from_usd
@@ -52,14 +52,33 @@ stg_fact_exchange_rate__joined AS (
             exchange_rate.date_key = date_dimension.date_key
     WHERE 
         exchange_rate.rate_from_usd IS NOT NULL
+
+    UNION ALL
+
+    -- USD is the base currency and is not returned by Frankfurter.
+    -- Its rate_to_usd is always 1.
+    SELECT
+        date_dimension.date_key,
+        currency.currency_key,
+        CAST(1 AS FLOAT64) AS rate_to_usd
+    FROM
+        stg_dim_date AS date_dimension
+    JOIN
+        stg_dim_currency AS currency
+        ON currency.currency_code = 'USD'
+),
+
+stg_fact_exchange_rate__dedupe AS (
+    SELECT DISTINCT *
+    FROM stg_fact_exchange_rate__joined
 ),
 
 stg_fact_exchange_rate__rate_round AS (
     SELECT
         date_key,
         currency_key,
-        ROUND(rate_to_usd,2) AS rate_to_usd
-    FROM stg_fact_exchange_rate__joined
+        rate_to_usd
+    FROM stg_fact_exchange_rate__dedupe
 ),
 
 stg_fact_exchange_rate__genkey AS (

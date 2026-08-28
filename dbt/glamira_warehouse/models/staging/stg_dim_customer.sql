@@ -30,18 +30,33 @@ stg_dim_customer__trim AS (
     FROM stg_dim_customer__rename
 ),
 
+stg_dim_customer__dedupe AS (
+    SELECT DISTINCT *
+    FROM stg_dim_customer__trim
+),
+
 stg_dim_customer__scd AS (
     SELECT
         *,
         current_date('Asia/Ho_Chi_Minh') as start_date,
         '9999-1-1' AS end_date,
         true AS is_current
-    FROM stg_dim_customer__trim
+    FROM stg_dim_customer__dedupe
 ),
 
 stg_dim_customer__genkey AS (
     SELECT
-        farm_fingerprint(customer_device_id) as customer_key,
+        farm_fingerprint(
+            concat(
+                customer_device_id,
+                '|',
+                customer_user_agent,
+                '|',
+                customer_user_id_db,
+                '|',
+                customer_email_address
+            )
+        ) as customer_key,
         *
     FROM stg_dim_customer__scd
 )

@@ -19,16 +19,16 @@ stg_dim_store__domain_name AS (
     FROM stg_dim_store__get_col
 ),
 
-stg_dim_store__distinct AS (
+stg_dim_store__dedupe AS (
     SELECT DISTINCT *
     FROM stg_dim_store__domain_name
 ),
 
 stg_dim_store__genkey AS (
     SELECT
-        farm_fingerprint(store_id) as store_key,
+        farm_fingerprint(concat(store_id, '|', store_domain)) as store_key,
         *
-    FROM stg_dim_store__distinct
+    FROM stg_dim_store__dedupe
 )
 
 SELECT * FROM stg_dim_store__genkey

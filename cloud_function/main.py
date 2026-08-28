@@ -21,10 +21,12 @@ SOURCE_BUCKET = "raw_glamira"
 MONGO_PREFIX = "mongodb_data_string/"
 LOCATION_PREFIX = "location_data/"
 PRODUCT_PREFIX = "product_data/"
+EXCHANGE_RATE_PREFIX = "exchange_rate_data/"
 
 MONGO_DESTINATION = f"{PROJECT_ID}.{DATASET_ID}.raw_mongo"
 LOCATION_DESTINATION = f"{PROJECT_ID}.{DATASET_ID}.raw_location"
 PRODUCT_DESTINATION = f"{PROJECT_ID}.{DATASET_ID}.raw_product"
+EXCHANGE_RATE_DESTINATION = f"{PROJECT_ID}.{DATASET_ID}.raw_exchange_rate"
 
 # Backward compatibility for callers that used the old Mongo-only constant.
 DESTINATION = MONGO_DESTINATION
@@ -46,10 +48,12 @@ def _load_object(
     job_id: str,
     event_id: str | None,
     enable_list_inference: bool = False,
+    autodetect: bool = False,
 ) -> None:
     job_config = bigquery.LoadJobConfig(
         source_format=source_format,
         write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+        autodetect=autodetect,
     )
     if enable_list_inference:
         parquet_options = bigquery.ParquetOptions()
@@ -163,6 +167,24 @@ def load_product_jsonl(
     )
 
 
+def load_exchange_rate_jsonl(
+    client: bigquery.Client,
+    source_uri: str,
+    job_id: str,
+    event_id: str | None = None,
+) -> None:
+    """Append one exchange-rate JSONL object to ``landing.raw_exchange_rate``."""
+    _load_object(
+        client=client,
+        source_uri=source_uri,
+        destination=EXCHANGE_RATE_DESTINATION,
+        source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+        job_id=job_id,
+        event_id=event_id,
+        autodetect=True,
+    )
+
+
 @functions_framework.cloud_event
 def trigger_bigquery_load(cloud_event: CloudEvent) -> None:
     """Route a Gen 2 GCS finalize CloudEvent to the matching loader."""
@@ -190,6 +212,8 @@ def trigger_bigquery_load(cloud_event: CloudEvent) -> None:
         route = load_location_jsonl
     elif object_name.startswith(PRODUCT_PREFIX) and lower_name.endswith(".jsonl"):
         route = load_product_jsonl
+    elif object_name.startswith(EXCHANGE_RATE_PREFIX) and lower_name.endswith(".jsonl"):
+        route = load_exchange_rate_jsonl
 
     if bucket_name != SOURCE_BUCKET or route is None:
         logger.info(

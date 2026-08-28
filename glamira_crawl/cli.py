@@ -9,6 +9,7 @@ import sys
 from config.config import Settings, load_settings
 from .crawler import crawl_pending
 from .discovery import discover
+from .exchange_rates import ExchangeRateStats, export_exchange_rates
 from .locations import DEFAULT_WORKERS, LocationStats, export_locations
 from .state import StateStore
 from load.export_to_gcs import export_to_gcs
@@ -46,6 +47,7 @@ def _parser() -> argparse.ArgumentParser:
         default=None,
         help="Số document tối đa trong mỗi file (mặc định lấy từ config)",
     )
+    commands.add_parser("exchange-rates", help="Xuất tỷ giá USD theo các ngày checkout thành công")
     commands.add_parser("stats", help="Xem trạng thái hàng đợi")
     return parser
 
@@ -101,6 +103,15 @@ def _run_load(settings: Settings, documents_per_file: int | None) -> None:
     )
 
 
+def _run_exchange_rates(settings: Settings) -> None:
+    stats: ExchangeRateStats = export_exchange_rates(settings)
+    print(
+        f"Exchange rates hoàn tất: đã quét={stats.scanned:,}, "
+        f"ngày duy nhất={stats.unique_dates:,}, ngày lỗi={stats.invalid_dates:,}, "
+        f"ngày trùng={stats.duplicate_dates:,}, đã ghi={stats.written:,}"
+    )
+
+
 def main() -> None:
     # Windows may otherwise use cp1252 and fail while printing Vietnamese help text.
     for stream in (sys.stdout, sys.stderr):
@@ -121,6 +132,9 @@ def main() -> None:
         return
     if args.command == "load":
         _run_load(settings, args.documents_per_file)
+        return
+    if args.command == "exchange-rates":
+        _run_exchange_rates(settings)
         return
 
     state = StateStore(settings.state_db)

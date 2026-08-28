@@ -1,11 +1,6 @@
 WITH stg_dim_location__source AS (
-    SELECT * 
+    SELECT *
     FROM {{source('landing', 'raw_location')}}
-),
-
-stg_dim_location_distinct AS (
-    SELECT DISTINCT *
-    FROM stg_dim_location__source
 ),
 
 stg_dim_location__rename AS (
@@ -14,7 +9,7 @@ stg_dim_location__rename AS (
         region_name AS location_region_name,
         country_code AS location_country_code,
         country_name AS location_country_name
-    FROM stg_dim_location_distinct
+    FROM stg_dim_location__source
 ),
 
 stg_dim_location__cast_type AS (
@@ -26,11 +21,16 @@ stg_dim_location__cast_type AS (
     FROM stg_dim_location__rename
 ),
 
+stg_dim_location__dedupe AS (
+    SELECT DISTINCT *
+    FROM stg_dim_location__cast_type
+),
+
 stg_dim_location__genkey AS (
     SELECT
         farm_fingerprint(concat(location_city_name, location_region_name, location_country_code, location_country_name)) AS location_key,
         *
-    FROM stg_dim_location__cast_type
+    FROM stg_dim_location__dedupe
 )
 
 SELECT * 

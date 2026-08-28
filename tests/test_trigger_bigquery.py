@@ -7,6 +7,7 @@ from google.cloud import bigquery
 
 from load.trigger_bigquery import (
     BIGQUERY_LOCATION,
+    EXCHANGE_RATE_DESTINATION,
     LOCATION_DESTINATION,
     MONGO_DESTINATION,
     PRODUCT_DESTINATION,
@@ -67,6 +68,14 @@ class TriggerBigQueryLoadTests(unittest.TestCase):
             PRODUCT_DESTINATION,
             bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
         )
+
+    def test_routes_exchange_rate_jsonl_with_nested_schema_autodetect(self):
+        config = self._assert_load(
+            "exchange_rate_data/exchange_rate.jsonl",
+            EXCHANGE_RATE_DESTINATION,
+            bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+        )
+        self.assertTrue(config.autodetect)
 
     @patch("load.trigger_bigquery.bigquery.Client")
     def test_ignores_other_bucket(self, client_class):

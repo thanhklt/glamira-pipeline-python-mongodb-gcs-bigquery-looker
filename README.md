@@ -151,6 +151,7 @@ poetry run python main.py --config path/to/config.yml crawl --retry-failed
 | `run` | Chạy `discover`, `crawl`, `export` liên tiếp |
 | `run --retry-failed` | Chạy toàn bộ pipeline và thử lại item thất bại |
 | `locations [--workers N]` | Xuất location của các IP duy nhất |
+| `exchange-rates` | Xuất tỷ giá USD cho các ngày checkout thành công |
 | `load [--documents-per-file N]` | Stream MongoDB thành Parquet và upload lên GCS |
 
 Để xem trợ giúp của một lệnh cụ thể:
@@ -165,7 +166,27 @@ poetry run python main.py locations --help
 - `data/products.jsonl`: dữ liệu sản phẩm; mỗi dòng là một JSON object.
 - `data/failed-urls.jsonl`: URL lỗi, số lần lỗi và URL fallback nếu có.
 - `data/locations.jsonl`: thông tin vị trí của các IP duy nhất.
+- `data/exchange_rate.jsonl`: tỷ giá USD, mỗi dòng chứa một ngày và toàn bộ mã tiền tệ.
 - `data/crawl-state.sqlite3`: checkpoint, hàng đợi và kết quả trung gian.
+
+### Xuất tỷ giá theo ngày checkout
+
+Lệnh sau lọc các document có `collection = "checkout_success"`, lấy các ngày duy nhất từ
+`local_time`, rồi gọi Frankfurter một lần cho mỗi ngày:
+
+```powershell
+poetry run python main.py exchange-rates
+```
+
+Kết quả được ghi đè vào `data/exchange_rate.jsonl`. Mỗi dòng có dạng:
+
+```json
+{"date":"2020-06-04","base":"USD","rates":{"AUD":1.44,"EUR":0.89,"GBP":0.79}}
+```
+
+Giá trị `rate` do Frankfurter cung cấp; ví dụ `"EUR": 0.89` nghĩa là 1 USD bằng 0.89 EUR.
+Các hằng số API, đồng tiền cơ sở, file đầu ra, timeout và retry nằm ở đầu file
+`glamira_crawl/exchange_rates.py`.
 
 ## Xuất MongoDB sang Parquet trên GCS
 
@@ -216,6 +237,18 @@ poetry run python main.py load
 ```
 
 Service account cần quyền tạo và đọc object trong bucket `raw_glamira`.
+
+Lệnh `load` cũng ghi đè các file JSONL vào các object sau:
+
+```text
+gs://raw_glamira/location_data/locations.jsonl
+gs://raw_glamira/product_data/products.jsonl
+gs://raw_glamira/exchange_rate_data/exchange_rate.jsonl
+```
+
+Cloud Function định tuyến file exchange rate vào bảng
+`glamira-project-502214.landing.raw_exchange_rate`. BigQuery tự suy luận schema NDJSON và giữ
+object `rates` dưới dạng RECORD lồng.
 
 Checkpoint được lưu đồng thời tại:
 

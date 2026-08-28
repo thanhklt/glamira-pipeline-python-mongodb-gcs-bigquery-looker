@@ -34,9 +34,9 @@ stg_dim_product__cast_type AS (
         CAST(name AS STRING) AS name,
         CAST(sku AS STRING) AS sku,
         CAST(gender AS STRING) AS gender,
-        CAST(price AS DECIMAL(10, 2)) AS price,
-        CAST(min_price AS DECIMAL(10, 2)) AS min_price,
-        CAST(max_price AS DECIMAL(10, 2)) AS max_price
+        CAST(price AS NUMERIC) AS price,
+        CAST(min_price AS NUMERIC) AS min_price,
+        CAST(max_price AS NUMERIC) AS max_price
     FROM stg_dim_product__trim
 ),
 
@@ -52,11 +52,16 @@ stg_dim_product__rename AS (
     FROM stg_dim_product__cast_type
 ),
 
+stg_dim_product__dedupe AS (
+    SELECT DISTINCT *
+    FROM stg_dim_product__rename
+),
+
 stg_dim__product__genkey AS (
     SELECT
         farm_fingerprint(product_id) AS product_key,
         *
-    FROM stg_dim_product__rename
+    FROM stg_dim_product__dedupe
 )
 
 SELECT * FROM stg_dim__product__genkey

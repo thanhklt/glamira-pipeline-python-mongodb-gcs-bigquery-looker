@@ -27,7 +27,7 @@ stg_dim_currency__mapping AS (
         ON tbl1.raw_currency = tbl2.raw_currency
 ),
 
-stg_dim_currency__distinct AS (
+stg_dim_currency__dedupe AS (
     SELECT DISTINCT *
     FROM stg_dim_currency__mapping
 ),
@@ -36,7 +36,7 @@ stg_dim_currency__genkey AS (
     SELECT
         farm_fingerprint(currency_code) AS currency_key,
         *
-    FROM stg_dim_currency__distinct
+    FROM stg_dim_currency__dedupe
 )
 
 SELECT * FROM stg_dim_currency__genkey
