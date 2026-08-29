@@ -1,0 +1,215 @@
+version: 2
+
+models:
+  - name: dim_currency
+    description: "Bảng chiều lưu thông tin chuẩn hóa về các loại tiền tệ."
+    columns:
+      - name: currency_key
+        description: "Khóa thay thế định danh duy nhất cho tiền tệ; giá trị -1 đại diện cho tiền tệ không xác định."
+      - name: currency_code
+        description: "Mã tiền tệ chuẩn, ví dụ USD hoặc EUR."
+      - name: currency_name
+        description: "Tên đầy đủ của tiền tệ."
+
+      - name: inserted_date
+        description: "Ngày bản ghi được thêm vào kho dữ liệu."
+      - name: inserted_by
+        description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
+      - name: updated_date
+        description: "Ngày bản ghi được cập nhật gần nhất."
+      - name: updated_by
+        description: "Tác nhân đã cập nhật bản ghi gần nhất."
+
+  - name: dim_customer
+    description: "Bảng chiều lưu thông tin khách hàng và trạng thái hiệu lực của bản ghi."
+    columns:
+      - name: customer_key
+        description: "Khóa thay thế định danh duy nhất cho khách hàng; giá trị -1 đại diện cho khách hàng không xác định."
+      - name: customer_device_id
+        description: "Mã thiết bị được ghi nhận của khách hàng."
+      - name: customer_user_agent
+        description: "Thông tin trình duyệt hoặc ứng dụng của khách hàng."
+      - name: customer_user_id_db
+        description: "Mã người dùng trong cơ sở dữ liệu nguồn."
+      - name: customer_email_address
+        description: "Địa chỉ email của khách hàng."
+      - name: start_date
+        description: "Ngày bắt đầu hiệu lực của bản ghi khách hàng."
+      - name: end_date
+        description: "Ngày kết thúc hiệu lực của bản ghi khách hàng."
+      - name: is_current
+        description: "Cho biết đây có phải là bản ghi hiện hành của khách hàng hay không."
+
+      - name: inserted_date
+        description: "Ngày bản ghi được thêm vào kho dữ liệu."
+      - name: inserted_by
+        description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
+      - name: updated_date
+        description: "Ngày bản ghi được cập nhật gần nhất."
+      - name: updated_by
+        description: "Tác nhân đã cập nhật bản ghi gần nhất."
+
+  - name: dim_date
+    description: "Bảng chiều ngày, cung cấp các thuộc tính lịch phục vụ phân tích theo thời gian."
+    columns:
+      - name: date_key
+        description: "Khóa ngày; ngày 1970-01-01 được dùng cho bản ghi không xác định."
+      - name: day_of_week
+        description: "Thứ tự ngày trong tuần, từ 1 đến 7."
+      - name: day_name
+        description: "Tên ngày trong tuần."
+      - name: day_of_month
+        description: "Thứ tự ngày trong tháng."
+      - name: day_of_year
+        description: "Thứ tự ngày trong năm."
+      - name: week_of_year
+        description: "Số tuần ISO trong năm."
+      - name: month_number
+        description: "Số thứ tự tháng trong năm."
+      - name: month_name
+        description: "Tên tháng."
+      - name: quarter_number
+        description: "Số thứ tự quý trong năm."
+      - name: year_number
+        description: "Năm của ngày."
+      - name: is_weekend
+        description: "Cho biết ngày có thuộc cuối tuần hay không."
+
+      - name: inserted_date
+        description: "Ngày bản ghi được thêm vào kho dữ liệu."
+      - name: inserted_by
+        description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
+      - name: updated_date
+        description: "Ngày bản ghi được cập nhật gần nhất."
+      - name: updated_by
+        description: "Tác nhân đã cập nhật bản ghi gần nhất."
+
+  - name: dim_location
+    description: "Bảng chiều lưu thông tin địa lý gồm thành phố, vùng và quốc gia."
+    columns:
+      - name: location_key
+        description: "Khóa thay thế định danh duy nhất cho vị trí; giá trị -1 đại diện cho vị trí không xác định."
+      - name: location_city_name
+        description: "Tên thành phố."
+      - name: location_region_name
+        description: "Tên vùng, bang hoặc tỉnh."
+      - name: location_country_code
+        description: "Mã quốc gia."
+      - name: location_country_name
+        description: "Tên quốc gia."
+
+      - name: inserted_date
+        description: "Ngày bản ghi được thêm vào kho dữ liệu."
+      - name: inserted_by
+        description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
+      - name: updated_date
+        description: "Ngày bản ghi được cập nhật gần nhất."
+      - name: updated_by
+        description: "Tác nhân đã cập nhật bản ghi gần nhất."
+
+  - name: dim_product
+    description: "Bảng chiều lưu thông tin mô tả và khoảng giá của sản phẩm."
+    columns:
+      - name: product_key
+        description: "Khóa thay thế định danh duy nhất cho sản phẩm; giá trị -1 đại diện cho sản phẩm không xác định."
+      - name: product_id
+        description: "Mã sản phẩm trong hệ thống nguồn."
+      - name: product_name
+        description: "Tên sản phẩm."
+      - name: product_sku
+        description: "Mã SKU của sản phẩm."
+      - name: product_gender
+        description: "Nhóm giới tính mục tiêu của sản phẩm."
+      - name: product_base_price
+        description: "Giá cơ sở của sản phẩm."
+      - name: product_min_price
+        description: "Giá thấp nhất được ghi nhận của sản phẩm."
+      - name: product_max_price
+        description: "Giá cao nhất được ghi nhận của sản phẩm."
+
+      - name: inserted_date
+        description: "Ngày bản ghi được thêm vào kho dữ liệu."
+      - name: inserted_by
+        description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
+      - name: updated_date
+        description: "Ngày bản ghi được cập nhật gần nhất."
+      - name: updated_by
+        description: "Tác nhân đã cập nhật bản ghi gần nhất."
+
+  - name: fact_exchange_rate
+    description: "Bảng fact lưu tỷ giá quy đổi của từng loại tiền tệ sang USD theo ngày."
+    columns:
+      - name: exchange_rate_key
+        description: "Khóa định danh duy nhất cho bản ghi tỷ giá."
+      - name: date_key
+        description: "Khóa ngoại tham chiếu đến ngày áp dụng tỷ giá trong dim_date."
+      - name: currency_key
+        description: "Khóa ngoại tham chiếu đến loại tiền tệ trong dim_currency; giá trị -1 đại diện cho tiền tệ không xác định."
+      - name: rate_to_usd
+        description: "Tỷ giá dùng để quy đổi một đơn vị tiền tệ nguồn sang USD."
+      - name: inserted_date
+        description: "Ngày bản ghi được thêm vào kho dữ liệu."
+      - name: inserted_by
+        description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
+      - name: updated_date
+        description: "Ngày bản ghi được cập nhật gần nhất."
+      - name: updated_by
+        description: "Tác nhân đã cập nhật bản ghi gần nhất."
+
+  - name: fact_sales_order_detail
+    description: "Bảng fact lưu chi tiết từng dòng sản phẩm trong đơn hàng cùng các khóa chiều và chỉ số bán hàng."
+    columns:
+      - name: detail_key
+        description: "Khóa định danh duy nhất cho dòng chi tiết đơn hàng."
+      - name: customer_key
+        description: "Khóa ngoại tham chiếu đến khách hàng trong dim_customer; giá trị -1 đại diện cho khách hàng không xác định."
+      - name: product_key
+        description: "Khóa ngoại tham chiếu đến sản phẩm trong dim_product; giá trị -1 đại diện cho sản phẩm không xác định."
+      - name: location_key
+        description: "Khóa ngoại tham chiếu đến vị trí trong dim_location; giá trị -1 đại diện cho vị trí không xác định."
+      - name: currency_key
+        description: "Khóa ngoại tham chiếu đến tiền tệ trong dim_currency; giá trị -1 đại diện cho tiền tệ không xác định."
+      - name: store_key
+        description: "Khóa ngoại tham chiếu đến cửa hàng trong dim_store; giá trị -1 đại diện cho cửa hàng không xác định."
+      - name: date_key
+        description: "Khóa ngoại tham chiếu đến ngày giao dịch trong dim_date."
+      - name: order_id
+        description: "Mã đơn hàng trong hệ thống nguồn."
+      - name: local_time
+        description: "Thời gian địa phương được ghi nhận của sự kiện bán hàng."
+      - name: time_stamp
+        description: "Dấu thời gian của sự kiện trong dữ liệu nguồn."
+      - name: ip
+        description: "Địa chỉ IP được ghi nhận cho giao dịch."
+      - name: sales_amount
+        description: "Số lượng sản phẩm của dòng chi tiết đơn hàng."
+      - name: sales_local_price
+        description: "Giá bán theo đơn vị tiền tệ địa phương."
+      - name: sales_usd_price
+        description: "Giá bán được quy đổi sang USD."
+      - name: inserted_date
+        description: "Ngày bản ghi được thêm vào kho dữ liệu."
+      - name: inserted_by
+        description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
+      - name: updated_date
+        description: "Ngày bản ghi được cập nhật gần nhất."
+      - name: updated_by
+        description: "Tác nhân đã cập nhật bản ghi gần nhất."
+
+  - name: dim_store
+    description: "Bảng chiều lưu thông tin cửa hàng và tên miền tương ứng."
+    columns:
+      - name: store_key
+        description: "Khóa thay thế định danh duy nhất cho cửa hàng; giá trị -1 đại diện cho cửa hàng không xác định."
+      - name: store_id
+        description: "Mã cửa hàng trong hệ thống nguồn."
+      - name: store_domain
+        description: "Tên miền cấp cao được trích xuất từ URL của cửa hàng."
+      - name: inserted_date
+        description: "Ngày bản ghi được thêm vào kho dữ liệu."
+      - name: inserted_by
+        description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
+      - name: updated_date
+        description: "Ngày bản ghi được cập nhật gần nhất."
+      - name: updated_by
+        description: "Tác nhân đã cập nhật bản ghi gần nhất."

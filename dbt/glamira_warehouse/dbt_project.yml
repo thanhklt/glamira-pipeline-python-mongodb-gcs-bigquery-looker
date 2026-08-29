@@ -33,8 +33,11 @@ models:
     staging:
       +materialized: view
       +schema: staging
-
+    warehouse:
+      +materialized: table
+      +schema: warehouse
 seeds:
   glamira_warehouse:
     +schema: staging
     +quote_columns: false
+

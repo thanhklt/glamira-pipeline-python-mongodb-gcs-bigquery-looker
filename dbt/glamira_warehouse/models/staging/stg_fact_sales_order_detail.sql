@@ -271,6 +271,13 @@ stg_fact_sales_order_detail__rename AS (
         price AS sales_local_price,
         sales_usd_price
     FROM stg_fact_sales_order_detail__get_usd_price
+),
+
+stg_fact_sales_order_detail__genkey AS (
+    SELECT
+        FARM_FINGERPRINT(CONCAT(order_id, '|', product_key)) AS detail_key,
+        *
+    FROM stg_fact_sales_order_detail__rename
 )
 
-SELECT * FROM stg_fact_sales_order_detail__rename
+SELECT * FROM stg_fact_sales_order_detail__genkey
