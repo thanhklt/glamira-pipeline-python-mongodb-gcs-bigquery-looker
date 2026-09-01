@@ -82,6 +82,7 @@ stg_fact_sales_order_detail__retrieve AS (
         source.current_url,
         source.local_time,
         source.time_stamp,
+        {{ parse_epoch_seconds('source.time_stamp') }} AS record_time,
         source.ip,
         cart_product.product_id,
         cart_product.currency AS raw_currency,
@@ -124,10 +125,10 @@ stg_fact_sales_sales_order_detail__joined__customer AS (
     LEFT JOIN
         stg_dim_customer AS dim_customer
         ON
-            current_fact.device_id = dim_customer.customer_device_id AND
-            current_fact.user_agent = dim_customer.customer_user_agent AND
-            current_fact.user_id_db = dim_customer.customer_user_id_db AND
-            current_fact.email_address = dim_customer.customer_email_address
+            NULLIF(TRIM(CAST(current_fact.device_id AS STRING)), '')
+                = dim_customer.customer_device_id
+            AND current_fact.record_time >= dim_customer.start_time
+            AND current_fact.record_time < dim_customer.end_time
 ),
 
 -- Lay product_key

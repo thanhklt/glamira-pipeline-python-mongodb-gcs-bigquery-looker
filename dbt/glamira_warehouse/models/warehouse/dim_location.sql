@@ -3,20 +3,10 @@ WITH dim_location__source AS (
     FROM {{ref('stg_dim_location')}}
 ),
 
-dim_location__null_handle AS (
-    SELECT
-        location_key,
-        COALESCE(location_city_name, 'XNA') AS location_city_name,
-        COALESCE(location_region_name, 'XNA') AS location_region_name,
-        COALESCE(location_country_code, 'XNA') AS location_country_code,
-        COALESCE(location_country_name, 'XNA') AS location_country_name
-    FROM
-        dim_location__source
-),
 
 dim_location__special_row AS (
     SELECT *
-    FROM dim_location__null_handle
+    FROM dim_location__source
     UNION ALL
     SELECT
         -1,

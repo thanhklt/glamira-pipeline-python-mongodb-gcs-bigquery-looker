@@ -3,16 +3,8 @@ WITH dim_store__source AS (
     FROM {{ ref('stg_dim_store') }}
 ),
 
-dim_store__null_handle AS (
-    SELECT
-        store_key,
-        COALESCE(CAST(store_id AS STRING), 'XNA') AS store_id,
-        COALESCE(store_domain, 'XNA') AS store_domain
-    FROM dim_store__source
-),
-
 dim_store__special_row AS (
-    SELECT * FROM dim_store__null_handle
+    SELECT * FROM dim_store__source
     UNION ALL
     SELECT -1, 'XNA', 'XNA'
 ),

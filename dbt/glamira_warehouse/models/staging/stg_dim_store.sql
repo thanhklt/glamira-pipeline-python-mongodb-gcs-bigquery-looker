@@ -24,11 +24,18 @@ stg_dim_store__dedupe AS (
     FROM stg_dim_store__domain_name
 ),
 
+stg_dim_store__null_handle AS (
+    SELECT
+        COALESCE(CAST(store_id AS STRING), 'XNA') AS store_id,
+        COALESCE(store_domain, 'XNA') AS store_domain
+    FROM stg_dim_store__dedupe
+),
+
 stg_dim_store__genkey AS (
     SELECT
         farm_fingerprint(concat(store_id, '|', store_domain)) as store_key,
         *
-    FROM stg_dim_store__dedupe
+    FROM stg_dim_store__null_handle
 )
 
 SELECT * FROM stg_dim_store__genkey

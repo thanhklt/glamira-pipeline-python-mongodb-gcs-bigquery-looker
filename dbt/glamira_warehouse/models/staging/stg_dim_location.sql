@@ -21,9 +21,19 @@ stg_dim_location__cast_type AS (
     FROM stg_dim_location__rename
 ),
 
+stg_dim_location__null_handle AS (
+    SELECT
+        COALESCE(location_city_name, 'XNA') AS location_city_name,
+        COALESCE(location_region_name, 'XNA') AS location_region_name,
+        COALESCE(location_country_code, 'XNA') AS location_country_code,
+        COALESCE(location_country_name, 'XNA') AS location_country_name
+    FROM
+        stg_dim_location__cast_type
+),
+
 stg_dim_location__dedupe AS (
     SELECT DISTINCT *
-    FROM stg_dim_location__cast_type
+    FROM stg_dim_location__null_handle
 ),
 
 stg_dim_location__genkey AS (

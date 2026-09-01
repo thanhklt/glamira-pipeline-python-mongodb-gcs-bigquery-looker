@@ -10,8 +10,8 @@ dim_customer__null_handle AS (
         COALESCE(customer_user_agent, 'XNA') AS customer_user_agent,
         COALESCE(customer_user_id_db, 'XNA') AS customer_user_id_db,
         COALESCE(customer_email_address, 'XNA') AS customer_email_address,
-        COALESCE(start_date, DATE '1900-01-01') AS start_date,
-        COALESCE(SAFE_CAST(end_date AS DATE), DATE '9999-01-01') AS end_date,
+        COALESCE(start_time, TIMESTAMP '1900-01-01 00:00:00+00') AS start_time,
+        COALESCE(end_time, TIMESTAMP '9999-01-01 00:00:00+00') AS end_time,
         COALESCE(is_current, FALSE) AS is_current
     FROM dim_customer__source
 ),
@@ -21,7 +21,9 @@ dim_customer__special_row AS (
     UNION ALL
     SELECT
         -1, 'XNA', 'XNA', 'XNA', 'XNA',
-        DATE '1900-01-01', DATE '9999-01-01', FALSE
+        TIMESTAMP '1900-01-01 00:00:00+00',
+        TIMESTAMP '9999-01-01 00:00:00+00',
+        FALSE
 ),
 
 dim_customer__audit AS (

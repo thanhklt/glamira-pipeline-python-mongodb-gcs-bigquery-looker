@@ -1,64 +1,79 @@
 WITH stg_dim_customer__source AS (
+    SELECT
+        NULLIF(TRIM(CAST(device_id AS STRING)), '') AS customer_device_id,
+        NULLIF(TRIM(CAST(user_agent AS STRING)), '') AS customer_user_agent,
+        NULLIF(TRIM(CAST(user_id_db AS STRING)), '') AS customer_user_id_db,
+        NULLIF(TRIM(CAST(email_address AS STRING)), '') AS customer_email_address,
+        {{ parse_epoch_seconds('time_stamp') }} AS record_time
+    FROM {{ source('landing', 'raw_mongo') }}
+),
+
+stg_dim_customer__valid AS (
     SELECT *
-    FROM {{source('landing','raw_mongo')}}
-),
-
-stg_dim_customer__get_col AS (
-    SELECT
-        device_id,
-        user_agent,
-        user_id_db,
-        email_address
     FROM stg_dim_customer__source
+    WHERE customer_device_id IS NOT NULL
+      AND record_time IS NOT NULL
 ),
 
-stg_dim_customer__rename AS (
+stg_dim_customer__previous_state AS (
     SELECT
-        device_id as customer_device_id,
-        user_agent as customer_user_agent,
-        user_id_db as customer_user_id_db,
-        email_address as customer_email_address
-    FROM stg_dim_customer__get_col
+        *,
+        ROW_NUMBER() OVER customer_history AS customer_version_number,
+        LAG(customer_user_agent) OVER customer_history AS previous_user_agent,
+        LAG(customer_user_id_db) OVER customer_history AS previous_user_id_db,
+        LAG(customer_email_address) OVER customer_history AS previous_email_address
+    FROM stg_dim_customer__valid
+    WINDOW customer_history AS (
+        PARTITION BY customer_device_id
+        ORDER BY record_time
+    )
 ),
 
-stg_dim_customer__trim AS (
+stg_dim_customer__changes AS (
     SELECT
-        trim(customer_device_id) as customer_device_id,
-        trim(customer_user_agent) as customer_user_agent,
-        trim(customer_user_id_db) as customer_user_id_db,
-        trim(customer_email_address) as customer_email_address
-    FROM stg_dim_customer__rename
+        customer_device_id,
+        customer_user_agent,
+        customer_user_id_db,
+        customer_email_address,
+        record_time AS start_time
+    FROM stg_dim_customer__previous_state
+    WHERE customer_version_number = 1
+       OR customer_user_agent IS DISTINCT FROM previous_user_agent
+       OR customer_user_id_db IS DISTINCT FROM previous_user_id_db
+       OR customer_email_address IS DISTINCT FROM previous_email_address
 ),
 
-stg_dim_customer__dedupe AS (
-    SELECT DISTINCT *
-    FROM stg_dim_customer__trim
+stg_dim_customer__intervals AS (
+    SELECT
+        *,
+        LEAD(start_time) OVER (
+            PARTITION BY customer_device_id
+            ORDER BY start_time
+        ) AS next_start_time
+    FROM stg_dim_customer__changes
 ),
 
 stg_dim_customer__scd AS (
     SELECT
-        *,
-        current_date('Asia/Ho_Chi_Minh') as start_date,
-        '9999-1-1' AS end_date,
-        true AS is_current
-    FROM stg_dim_customer__dedupe
-),
-
-stg_dim_customer__genkey AS (
-    SELECT
-        farm_fingerprint(
-            concat(
+        FARM_FINGERPRINT(
+            CONCAT(
                 customer_device_id,
                 '|',
-                customer_user_agent,
-                '|',
-                customer_user_id_db,
-                '|',
-                customer_email_address
+                FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%E6SZ', start_time, 'UTC')
             )
-        ) as customer_key,
-        *
-    FROM stg_dim_customer__scd
+        ) AS customer_key,
+        customer_device_id,
+        customer_user_agent,
+        customer_user_id_db,
+        customer_email_address,
+        start_time,
+        COALESCE(
+            next_start_time,
+            TIMESTAMP '9999-01-01 00:00:00+00'
+        ) AS end_time,
+        next_start_time IS NULL AS is_current
+    FROM stg_dim_customer__intervals
 )
 
-SELECT * FROM stg_dim_customer__genkey
+SELECT *
+FROM stg_dim_customer__scd
