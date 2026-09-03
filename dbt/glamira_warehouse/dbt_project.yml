@@ -36,6 +36,9 @@ models:
     warehouse:
       +materialized: table
       +schema: warehouse
+    looker:
+      +materialized: view
+      +schema: looker
 seeds:
   glamira_warehouse:
     +schema: staging

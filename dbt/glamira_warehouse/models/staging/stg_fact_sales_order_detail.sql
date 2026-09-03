@@ -274,11 +274,31 @@ stg_fact_sales_order_detail__rename AS (
     FROM stg_fact_sales_order_detail__get_usd_price
 ),
 
+
+stg_fact_sales_order_detail__null_handle AS (
+    SELECT
+        COALESCE(customer_key, -1) AS customer_key,
+        COALESCE(product_key, -1) AS product_key,
+        COALESCE(location_key, -1) AS location_key,
+        COALESCE(currency_key, -1) AS currency_key,
+        COALESCE(store_key, -1) AS store_key,
+        COALESCE(date_key, '1970-01-01') AS date_key,
+        order_id,
+        local_time,
+        time_stamp,
+        ip,
+        sales_amount,
+        sales_local_price,
+        sales_usd_price
+    FROM
+        stg_fact_sales_order_detail__rename
+),
+
 stg_fact_sales_order_detail__genkey AS (
     SELECT
         FARM_FINGERPRINT(CONCAT(order_id, '|', product_key)) AS detail_key,
         *
-    FROM stg_fact_sales_order_detail__rename
+    FROM stg_fact_sales_order_detail__null_handle
 )
 
 SELECT * FROM stg_fact_sales_order_detail__genkey

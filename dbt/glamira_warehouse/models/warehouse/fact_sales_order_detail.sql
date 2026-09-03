@@ -18,25 +18,6 @@ WITH fact_sales_order_detail__source AS (
     {% endif %}
 ),
 
-fact_sales_order_detail__null_handle AS (
-    SELECT
-        detail_key,
-        COALESCE(customer_key, -1) AS customer_key,
-        COALESCE(product_key, -1) AS product_key,
-        COALESCE(location_key, -1) AS location_key,
-        COALESCE(currency_key, -1) AS currency_key,
-        COALESCE(store_key, -1) AS store_key,
-        COALESCE(date_key, '1970-01-01') AS date_key,
-        order_id,
-        local_time,
-        time_stamp,
-        ip,
-        sales_amount,
-        sales_local_price,
-        sales_usd_price
-    FROM
-        fact_sales_order_detail__source
-),
 
 fact_sales_order_detail__audit AS (
     SELECT
@@ -46,7 +27,7 @@ fact_sales_order_detail__audit AS (
         current_date('Asia/Saigon') AS updated_date,
         'dbt' AS updated_by
     FROM
-        fact_sales_order_detail__null_handle
+        fact_sales_order_detail__source
 )
 
 SELECT * FROM fact_sales_order_detail__audit
