@@ -1,6 +1,6 @@
-WITH order_by_location__source AS (
+WITH fact_sales_order_detail AS (
     SELECT *
-    FROM {{ref('stg_fact_sales_order_detail')}}
+    FROM {{ref('fact_sales_order_detail')}}
 ),
 
 dim_location AS (
@@ -8,25 +8,25 @@ dim_location AS (
     FROM {{ ref('dim_location') }}
 ),
 
-order_by_location__join AS (
+revenue_by_country__join AS (
     SELECT
-        l.*,
-        o.sales_usd_price
+        d.*,
+        f.sales_usd_price
     FROM 
-        order_by_location__source AS o
+        dim_location AS d
     JOIN
-        dim_location AS l
+        fact_sales_order_detail AS f
         ON 
-            o.location_key = l.location_key
+            f.location_key = d.location_key
 ),
 
-order_by_location__groupby AS (
+revenue_by_country__groupby AS (
     SELECT        
         location_country_name,
         location_country_code,
         SUM(sales_usd_price) AS Revenue
     FROM 
-        order_by_location__join
+        revenue_by_country__join
     GROUP BY
         location_country_name,
         location_country_code
@@ -34,4 +34,4 @@ order_by_location__groupby AS (
         Revenue DESC
 )
 
-SELECT * FROM order_by_location__groupby
+SELECT * FROM revenue_by_country__groupby

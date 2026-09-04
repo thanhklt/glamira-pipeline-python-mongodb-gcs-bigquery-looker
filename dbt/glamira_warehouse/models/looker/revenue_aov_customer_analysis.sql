@@ -7,16 +7,13 @@ dim_customer AS (
     FROM {{ ref('dim_customer') }}
 ),
 
-count_record AS (
+revenue_aov_customer_analysis AS (
     SELECT
         SUM(f.sales_usd_price) AS Revenue,
         COUNT(DISTINCT f.order_id) AS Orders,
         SUM(f.sales_usd_price) / COALESCE(NULLIF(COUNT(DISTINCT f.order_id), 0), 1) AS AOV,
-        (
-            SELECT COUNT(DISTINCT c.customer_device_id)
-            FROM dim_customer AS c
-        ) AS Customers
+        COUNT(DISTINCT f.customer_key) AS count_customer
     FROM 
         fact_sale AS f
 )
-SELECT * FROM count_record
+SELECT * FROM revenue_aov_customer_analysis
