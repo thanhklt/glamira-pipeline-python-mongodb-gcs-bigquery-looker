@@ -38,7 +38,7 @@ stg_dim_location__dedupe AS (
 
 stg_dim_location__genkey AS (
     SELECT
-        farm_fingerprint(concat(location_city_name, location_region_name, location_country_code, location_country_name)) AS location_key,
+        farm_fingerprint(concat(location_city_name,'|', location_region_name,'|', location_country_code)) AS location_key,
         *
     FROM stg_dim_location__dedupe
 )

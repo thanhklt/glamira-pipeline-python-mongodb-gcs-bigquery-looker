@@ -9,12 +9,23 @@ WITH stg_dim_customer__source AS (
 ),
 
 stg_dim_customer__valid AS (
-    SELECT *
-    FROM stg_dim_customer__source
-    WHERE customer_device_id IS NOT NULL
-      AND record_time IS NOT NULL
+    SELECT * EXCEPT(rn)
+    FROM (
+        SELECT
+            *,
+            ROW_NUMBER() OVER (
+                PARTITION BY customer_device_id, record_time
+                ORDER BY
+                    (customer_email_address IS NOT NULL) DESC,
+                    (customer_user_id_db IS NOT NULL) DESC,
+                    (customer_user_agent IS NOT NULL) DESC
+            ) AS rn
+        FROM stg_dim_customer__source
+        WHERE customer_device_id IS NOT NULL
+          AND record_time IS NOT NULL
+    )
+    WHERE rn = 1
 ),
-
 stg_dim_customer__previous_state AS (
     SELECT
         *,
@@ -43,6 +54,23 @@ stg_dim_customer__changes AS (
        OR customer_email_address IS DISTINCT FROM previous_email_address
 ),
 
+stg_dim_customer__unique_changes AS (
+    SELECT * EXCEPT(rn)
+    FROM (
+        SELECT
+            *,
+            ROW_NUMBER() OVER (
+                PARTITION BY customer_device_id, start_time
+                ORDER BY
+                    (customer_email_address IS NOT NULL) DESC,
+                    (customer_user_id_db IS NOT NULL) DESC,
+                    (customer_user_agent IS NOT NULL) DESC
+            ) AS rn
+        FROM stg_dim_customer__changes
+    )
+    WHERE rn = 1
+),
+
 stg_dim_customer__intervals AS (
     SELECT
         *,
@@ -50,7 +78,7 @@ stg_dim_customer__intervals AS (
             PARTITION BY customer_device_id
             ORDER BY start_time
         ) AS next_start_time
-    FROM stg_dim_customer__changes
+    FROM stg_dim_customer__unique_changes
 ),
 
 stg_dim_customer__scd AS (

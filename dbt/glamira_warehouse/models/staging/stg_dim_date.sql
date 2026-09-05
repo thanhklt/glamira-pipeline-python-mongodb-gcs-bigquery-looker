@@ -6,6 +6,7 @@ WITH stg_dim_date__source AS (
 stg_dim_date__get_local_time AS (
     SELECT local_time
     FROM stg_dim_date__source
+    WHERE collection = 'checkout_success'
 ),
 
 -- Trong bigquery local_time dang la string

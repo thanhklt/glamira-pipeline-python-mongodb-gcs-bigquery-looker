@@ -2,11 +2,12 @@ WITH stg_dim_store__source AS (
     SELECT * FROM {{ source('landing','raw_mongo') }}
 ),
 
-stg_dim_store__get_col AS (
+stg_dim_store__filter AS (
     SELECT 
         store_id,
         current_url
     FROM stg_dim_store__source
+    WHERE collection =  'checkout_success'
 ),
 
 stg_dim_store__domain_name AS (
@@ -16,7 +17,7 @@ stg_dim_store__domain_name AS (
             lower(regexp_extract(current_url, r'^https?://([^/:]+)')),
             r'(\.[^.]+)$'
         ) AS store_domain
-    FROM stg_dim_store__get_col
+    FROM stg_dim_store__filter
 ),
 
 stg_dim_store__dedupe AS (

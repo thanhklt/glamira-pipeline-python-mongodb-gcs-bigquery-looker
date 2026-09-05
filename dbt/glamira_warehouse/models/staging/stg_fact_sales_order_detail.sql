@@ -229,6 +229,37 @@ stg_fact_sales_order_detail__normalize_price AS (
     FROM stg_fact_sales_order_detail__measurement
 ),
 
+
+stg_fact_sales_order_detail__aggregate_cart AS (
+    SELECT
+        customer_key,
+        product_key,
+        location_key,
+        currency_key,
+        store_key,
+        order_id,
+        date_key,
+        local_time,
+        time_stamp,
+        ip,
+        price,
+        SUM(SAFE_CAST(amount AS INT64)) AS amount
+    FROM
+        stg_fact_sales_order_detail__normalize_price
+    GROUP BY
+        customer_key,
+        product_key,
+        location_key,
+        currency_key,
+        store_key,
+        order_id,
+        date_key,
+        local_time,
+        time_stamp,
+        ip,
+        price
+),
+
 stg_fact_sales_order_detail__get_usd_price AS (
     SELECT
         stg_fact_sales.customer_key,
@@ -248,7 +279,7 @@ stg_fact_sales_order_detail__get_usd_price AS (
             2
         ) AS sales_usd_price
     FROM
-        stg_fact_sales_order_detail__normalize_price AS stg_fact_sales
+        stg_fact_sales_order_detail__aggregate_cart AS stg_fact_sales
     LEFT JOIN
         stg_fact_exchange_rate
         ON 
@@ -294,11 +325,37 @@ stg_fact_sales_order_detail__null_handle AS (
         stg_fact_sales_order_detail__rename
 ),
 
+stg_fact_sales_order_detail__cast_type AS (
+    SELECT
+        CAST(customer_key AS INT64) AS customer_key,
+        CAST(product_key AS INT64) AS product_key,
+        CAST(location_key AS INT64) AS location_key,
+        CAST(currency_key AS INT64) AS currency_key,
+        CAST(store_key AS INT64) AS store_key,
+        CAST(date_key AS DATE) AS date_key,
+        CAST(order_id AS STRING) AS order_id,
+        CAST(local_time AS STRING) AS local_time,
+        {{ parse_epoch_seconds('time_stamp') }} AS time_stamp,
+        CAST(ip AS STRING) AS ip,
+        CAST(sales_amount AS INT64) AS sales_amount,
+        CAST(sales_local_price AS NUMERIC) AS sales_local_price,
+        CAST(sales_usd_price AS NUMERIC) AS sales_usd_price
+    FROM
+        stg_fact_sales_order_detail__null_handle
+),
+
 stg_fact_sales_order_detail__genkey AS (
     SELECT
-        FARM_FINGERPRINT(CONCAT(order_id, '|', product_key)) AS detail_key,
+        FARM_FINGERPRINT(
+            CONCAT(
+                order_id, '|',
+                product_key, '|',
+                time_stamp, '|',
+                sales_local_price
+            )
+        ) AS detail_key,
         *
-    FROM stg_fact_sales_order_detail__null_handle
+    FROM stg_fact_sales_order_detail__cast_type
 )
 
 SELECT * FROM stg_fact_sales_order_detail__genkey

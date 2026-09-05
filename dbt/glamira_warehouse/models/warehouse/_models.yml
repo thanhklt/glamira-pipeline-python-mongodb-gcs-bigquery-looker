@@ -13,6 +13,7 @@ models:
         description: "Mã tiền tệ chuẩn, ví dụ USD hoặc EUR."
         data_tests:
           - not_null
+          - unique
       - name: currency_name
         description: "Tên đầy đủ của tiền tệ."
         data_tests:
@@ -37,6 +38,10 @@ models:
 
   - name: dim_customer
     description: "Bảng chiều lưu thông tin khách hàng và trạng thái hiệu lực của bản ghi."
+    data_tests:
+      - dbt_expectations.expect_compound_columns_to_be_unique:
+          column_list: ["customer_device_id", "start_time"]
+          row_condition: "customer_key != -1"
     columns:
       - name: customer_key
         description: "Khóa thay thế định danh duy nhất cho từng phiên bản SCD2 của khách hàng; giá trị -1 đại diện cho khách hàng không xác định."
@@ -90,146 +95,254 @@ models:
     columns:
       - name: date_key
         description: "Khóa ngày; ngày 1970-01-01 được dùng cho bản ghi không xác định."
-        data_tests: [not_null, unique]
+        data_tests:
+          - not_null
+          - unique
       - name: day_of_week
         description: "Thứ tự ngày trong tuần, từ 1 đến 7."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: day_name
         description: "Tên ngày trong tuần."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: day_of_month
         description: "Thứ tự ngày trong tháng."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: day_of_year
         description: "Thứ tự ngày trong năm."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: week_of_year
         description: "Số tuần ISO trong năm."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: month_number
         description: "Số thứ tự tháng trong năm."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: month_name
         description: "Tên tháng."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: quarter_number
         description: "Số thứ tự quý trong năm."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: year_number
         description: "Năm của ngày."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: is_weekend
         description: "Cho biết ngày có thuộc cuối tuần hay không."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
 
       - name: inserted_date
         description: "Ngày bản ghi được thêm vào kho dữ liệu."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: inserted_by
         description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: updated_date
         description: "Ngày bản ghi được cập nhật gần nhất."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: updated_by
         description: "Tác nhân đã cập nhật bản ghi gần nhất."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
 
   - name: dim_location
     description: "Bảng chiều lưu thông tin địa lý gồm thành phố, vùng và quốc gia."
+    data_tests:
+      - dbt_expectations.expect_compound_columns_to_be_unique:
+          column_list: ["location_city_name", "location_region_name", "location_country_code"]
+          row_condition: "location_key != -1"
     columns:
       - name: location_key
         description: "Khóa thay thế định danh duy nhất cho vị trí; giá trị -1 đại diện cho vị trí không xác định."
-        data_tests: [not_null, unique]
+        data_tests:
+          - not_null
+          - unique
       - name: location_city_name
         description: "Tên thành phố."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: location_region_name
         description: "Tên vùng, bang hoặc tỉnh."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: location_country_code
         description: "Mã quốc gia."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: location_country_name
         description: "Tên quốc gia."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
 
       - name: inserted_date
         description: "Ngày bản ghi được thêm vào kho dữ liệu."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: inserted_by
         description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: updated_date
         description: "Ngày bản ghi được cập nhật gần nhất."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: updated_by
         description: "Tác nhân đã cập nhật bản ghi gần nhất."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
 
   - name: dim_product
     description: "Bảng chiều lưu thông tin mô tả và khoảng giá của sản phẩm."
     columns:
       - name: product_key
         description: "Khóa thay thế định danh duy nhất cho sản phẩm; giá trị -1 đại diện cho sản phẩm không xác định."
-        data_tests: [not_null, unique]
+        data_tests:
+          - not_null
+          - unique
       - name: product_id
         description: "Mã sản phẩm trong hệ thống nguồn."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
+          - unique
       - name: product_name
         description: "Tên sản phẩm."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: product_sku
         description: "Mã SKU của sản phẩm."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: product_gender
         description: "Nhóm giới tính mục tiêu của sản phẩm."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: product_base_price
         description: "Giá cơ sở của sản phẩm."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: product_min_price
         description: "Giá thấp nhất được ghi nhận của sản phẩm."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: product_max_price
         description: "Giá cao nhất được ghi nhận của sản phẩm."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
 
       - name: inserted_date
         description: "Ngày bản ghi được thêm vào kho dữ liệu."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: inserted_by
         description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: updated_date
         description: "Ngày bản ghi được cập nhật gần nhất."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
       - name: updated_by
         description: "Tác nhân đã cập nhật bản ghi gần nhất."
-        data_tests: [not_null]
+        data_tests:
+          - not_null
 
+  - name: dim_store
+    description: "Bảng chiều lưu thông tin cửa hàng và tên miền tương ứng."
+    data_tests:
+      - dbt_expectations.expect_compound_columns_to_be_unique:
+          column_list: ["store_id", "store_domain"]
+    columns:
+      - name: store_key
+        description: "Khóa thay thế định danh duy nhất cho cửa hàng; giá trị -1 đại diện cho cửa hàng không xác định."
+        data_tests:
+          - not_null
+          - unique
+      - name: store_id
+        description: "Mã cửa hàng trong hệ thống nguồn."
+        data_tests:
+          - not_null
+      - name: store_domain
+        description: "Tên miền cấp cao được trích xuất từ URL của cửa hàng."
+        data_tests:
+          - not_null
+      - name: inserted_date
+        description: "Ngày bản ghi được thêm vào kho dữ liệu."
+        data_tests:
+          - not_null
+      - name: inserted_by
+        description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
+        data_tests:
+          - not_null
+      - name: updated_date
+        description: "Ngày bản ghi được cập nhật gần nhất."
+        data_tests:
+          - not_null
+      - name: updated_by
+        description: "Tác nhân đã cập nhật bản ghi gần nhất."
+        data_tests:
+          - not_null
+
+# =================BANG FACT==================================
   - name: fact_exchange_rate
     description: "Bảng fact lưu tỷ giá quy đổi của từng loại tiền tệ sang USD theo ngày."
+    data_tests:
+      - dbt_expectations.expect_compound_columns_to_be_unique:
+          column_list: ["date_key", "currency_key"]
     columns:
       - name: exchange_rate_key
         description: "Khóa định danh duy nhất cho bản ghi tỷ giá."
+        data_tests:
+          - not_null
+          - unique
       - name: date_key
         description: "Khóa ngoại tham chiếu đến ngày áp dụng tỷ giá trong dim_date."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
       - name: currency_key
         description: "Khóa ngoại tham chiếu đến loại tiền tệ trong dim_currency; giá trị -1 đại diện cho tiền tệ không xác định."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_currency')
+                field: currency_key
       - name: rate_to_usd
         description: "Tỷ giá dùng để quy đổi một đơn vị tiền tệ nguồn sang USD."
       - name: inserted_date
         description: "Ngày bản ghi được thêm vào kho dữ liệu."
+        data_tests:
+          - not_null
       - name: inserted_by
         description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
+        data_tests:
+          - not_null
       - name: updated_date
         description: "Ngày bản ghi được cập nhật gần nhất."
+        data_tests:
+          - not_null
       - name: updated_by
         description: "Tác nhân đã cập nhật bản ghi gần nhất."
+        data_tests:
+          - not_null
 
   - name: fact_sales_order_detail
     description: "Bảng fact lưu chi tiết từng dòng sản phẩm trong đơn hàng cùng các khóa chiều và chỉ số bán hàng."
+    data_tests:
+      - dbt_expectations.expect_compound_columns_to_be_unique:
+          column_list: ["order_id", "product_key", "time_stamp", "sales_local_price"]
     columns:
       - name: detail_key
         description: "Khóa định danh duy nhất cho dòng chi tiết đơn hàng."
@@ -246,14 +359,44 @@ models:
                 field: customer_key
       - name: product_key
         description: "Khóa ngoại tham chiếu đến sản phẩm trong dim_product; giá trị -1 đại diện cho sản phẩm không xác định."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
       - name: location_key
         description: "Khóa ngoại tham chiếu đến vị trí trong dim_location; giá trị -1 đại diện cho vị trí không xác định."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_location')
+                field: location_key
       - name: currency_key
         description: "Khóa ngoại tham chiếu đến tiền tệ trong dim_currency; giá trị -1 đại diện cho tiền tệ không xác định."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_currency')
+                field: currency_key
       - name: store_key
         description: "Khóa ngoại tham chiếu đến cửa hàng trong dim_store; giá trị -1 đại diện cho cửa hàng không xác định."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_store')
+                field: store_key
       - name: date_key
         description: "Khóa ngoại tham chiếu đến ngày giao dịch trong dim_date."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
       - name: order_id
         description: "Mã đơn hàng trong hệ thống nguồn."
       - name: local_time
@@ -276,28 +419,3 @@ models:
         description: "Ngày bản ghi được cập nhật gần nhất."
       - name: updated_by
         description: "Tác nhân đã cập nhật bản ghi gần nhất."
-
-  - name: dim_store
-    description: "Bảng chiều lưu thông tin cửa hàng và tên miền tương ứng."
-    columns:
-      - name: store_key
-        description: "Khóa thay thế định danh duy nhất cho cửa hàng; giá trị -1 đại diện cho cửa hàng không xác định."
-        data_tests: [not_null, unique]
-      - name: store_id
-        description: "Mã cửa hàng trong hệ thống nguồn."
-        data_tests: [not_null]
-      - name: store_domain
-        description: "Tên miền cấp cao được trích xuất từ URL của cửa hàng."
-        data_tests: [not_null]
-      - name: inserted_date
-        description: "Ngày bản ghi được thêm vào kho dữ liệu."
-        data_tests: [not_null]
-      - name: inserted_by
-        description: "Tác nhân đã thêm bản ghi vào kho dữ liệu."
-        data_tests: [not_null]
-      - name: updated_date
-        description: "Ngày bản ghi được cập nhật gần nhất."
-        data_tests: [not_null]
-      - name: updated_by
-        description: "Tác nhân đã cập nhật bản ghi gần nhất."
-        data_tests: [not_null]
