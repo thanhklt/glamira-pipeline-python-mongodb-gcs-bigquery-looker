@@ -15,4 +15,3 @@ Crawler sử dụng `curl-cffi`, không cần cài Chrome, Edge hoặc Playwrigh
 
 ## To do:
 - relationships test: fact_sales_order_detail vs dim_customer: 1 bản ghi bị lỗi
-- not null test: fact_sales_order_detail bị lỗi vì tồn tại price null: 175 bản ghi bị lỗi

@@ -1,6 +1,6 @@
 WITH fact_sale AS (
     SELECT *
-    FROM {{ ref('stg_fact_sales_order_detail') }}
+    FROM {{ ref('fact_sales_order_detail') }}
 ),
 dim_customer AS (
     SELECT *

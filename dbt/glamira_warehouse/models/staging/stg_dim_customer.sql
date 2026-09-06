@@ -18,7 +18,10 @@ stg_dim_customer__valid AS (
                 ORDER BY
                     (customer_email_address IS NOT NULL) DESC,
                     (customer_user_id_db IS NOT NULL) DESC,
-                    (customer_user_agent IS NOT NULL) DESC
+                    (customer_user_agent IS NOT NULL) DESC,
+                    customer_email_address DESC,
+                    customer_user_id_db DESC,
+                    customer_user_agent DESC
             ) AS rn
         FROM stg_dim_customer__source
         WHERE customer_device_id IS NOT NULL
@@ -64,7 +67,10 @@ stg_dim_customer__unique_changes AS (
                 ORDER BY
                     (customer_email_address IS NOT NULL) DESC,
                     (customer_user_id_db IS NOT NULL) DESC,
-                    (customer_user_agent IS NOT NULL) DESC
+                    (customer_user_agent IS NOT NULL) DESC,
+                    customer_email_address DESC,
+                    customer_user_id_db DESC,
+                    customer_user_agent DESC
             ) AS rn
         FROM stg_dim_customer__changes
     )
