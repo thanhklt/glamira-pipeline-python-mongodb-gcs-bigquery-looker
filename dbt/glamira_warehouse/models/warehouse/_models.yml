@@ -60,6 +60,8 @@ models:
         description: "Mã người dùng trong cơ sở dữ liệu nguồn."
       - name: customer_email_address
         description: "Địa chỉ email của khách hàng."
+        policy_tags:
+          - "projects/glamira-project-502214/locations/asia-southeast1/taxonomies/7599326178370482387/policyTags/3702906858211363507"
       - name: start_time
         description: "Thời điểm UTC bắt đầu hiệu lực của phiên bản khách hàng, tính inclusively."
         data_tests:
