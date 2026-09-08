@@ -4,14 +4,24 @@ WITH dim_store__source AS (
 ),
 
 dim_store__special_row AS (
-    SELECT * FROM dim_store__source
+    SELECT 
+        store_key,
+        store_id,
+        store_domain 
+    FROM  
+        dim_store__source
     UNION ALL
-    SELECT -1, 'XNA', 'XNA'
+    SELECT 
+        -1 AS store_key,
+        'XNA' AS store_id,
+        'XNA' AS store_domain
 ),
 
 dim_store__audit AS (
     SELECT
-        *,
+        store_key,
+        store_id,
+        store_domain,
         current_date('Asia/Saigon') AS inserted_date,
         'dbt' AS inserted_by,
         current_date('Asia/Saigon') AS updated_date,

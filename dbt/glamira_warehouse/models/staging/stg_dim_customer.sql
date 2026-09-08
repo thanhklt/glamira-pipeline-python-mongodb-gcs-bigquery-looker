@@ -50,7 +50,8 @@ stg_dim_customer__changes AS (
         customer_user_id_db,
         customer_email_address,
         record_time AS start_time
-    FROM stg_dim_customer__previous_state
+    FROM 
+        stg_dim_customer__previous_state
     WHERE customer_version_number = 1
        OR customer_user_agent IS DISTINCT FROM previous_user_agent
        OR customer_user_id_db IS DISTINCT FROM previous_user_id_db

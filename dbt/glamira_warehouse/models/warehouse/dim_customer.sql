@@ -20,15 +20,26 @@ dim_customer__special_row AS (
     SELECT * FROM dim_customer__null_handle
     UNION ALL
     SELECT
-        -1, 'XNA', 'XNA', 'XNA', 'XNA',
-        TIMESTAMP '1900-01-01 00:00:00+00',
-        TIMESTAMP '9999-01-01 00:00:00+00',
-        FALSE
+        -1, 
+        'XNA' AS customer_device_id, 
+        'XNA' AS customer_user_agent, 
+        'XNA' AS customer_user_id_db, 
+        'XNA' AS customer_email_address,
+        TIMESTAMP '1900-01-01 00:00:00+00' AS start_time,
+        TIMESTAMP '9999-01-01 00:00:00+00' AS end_time,
+        FALSE  AS is_current
 ),
 
 dim_customer__audit AS (
     SELECT
-        *,
+        customer_key,
+        customer_device_id,
+        customer_user_agent,
+        customer_user_id_db,
+        customer_email_address,
+        start_time,
+        end_time,
+        is_current,
         current_date('Asia/Saigon') AS inserted_date,
         'dbt' AS inserted_by,
         current_date('Asia/Saigon') AS updated_date,

@@ -17,21 +17,37 @@ dim_product__null_handle AS (
 ),
 
 dim_product__special_row AS (
-    SELECT * FROM dim_product__null_handle
+    SELECT 
+        * 
+    FROM dim_product__null_handle
     UNION ALL
     SELECT
-        -1, 'XNA', 'XNA', 'XNA', 'XNA',
-        NUMERIC '0', NUMERIC '0', NUMERIC '0'
+        -1 AS product_key,
+        'XNA' AS product_id,
+        'XNA' AS product_name,
+        'XNA' AS product_sku,
+        'XNA' AS product_gender,
+        NUMERIC '0' AS product_base_price,
+        NUMERIC '0' AS product_min_price,
+        NUMERIC '0' AS product_max_price
 ),
 
 dim_product__audit AS (
     SELECT
-        *,
+        product_key,
+        product_id,
+        product_name,
+        product_sku,
+        product_gender,
+        product_base_price,
+        product_min_price,
+        product_max_price,
         current_date('Asia/Saigon') AS inserted_date,
         'dbt' AS inserted_by,
         current_date('Asia/Saigon') AS updated_date,
         'dbt' AS updated_by
-    FROM dim_product__special_row
+    FROM 
+        dim_product__special_row
 )
 
 SELECT * FROM dim_product__audit

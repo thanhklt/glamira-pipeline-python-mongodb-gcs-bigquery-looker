@@ -1,7 +1,7 @@
 {{
     config(
         materialized='incremental',
-        unique_key='exchange_rate_key',
+        unique_key=['date_key', 'currency_key'],
         incremental_strategy='merge'
     )
 }}
@@ -30,7 +30,10 @@ fact_exchange_rate__null_handle AS (
 
 fact_exchange_rate__audit AS (
     SELECT
-        *,
+        exchange_rate_key,
+        date_key,
+        currency_key,
+        rate_to_usd,
         current_date('Asia/Saigon') AS inserted_date,
         'dbt' AS inserted_by,
         current_date('Asia/Saigon') AS updated_date,

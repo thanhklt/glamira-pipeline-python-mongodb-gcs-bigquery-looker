@@ -344,7 +344,7 @@ models:
     description: "Bảng fact lưu chi tiết từng dòng sản phẩm trong đơn hàng cùng các khóa chiều và chỉ số bán hàng."
     data_tests:
       - dbt_expectations.expect_compound_columns_to_be_unique:
-          column_list: ["order_id", "product_key", "time_stamp", "sales_local_price"]
+          column_list: ["order_id", "product_key", "time_stamp"]
     columns:
       - name: detail_key
         description: "Khóa định danh duy nhất cho dòng chi tiết đơn hàng."

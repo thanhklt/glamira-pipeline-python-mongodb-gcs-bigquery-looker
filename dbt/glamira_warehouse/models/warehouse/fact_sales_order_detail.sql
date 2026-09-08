@@ -1,7 +1,7 @@
 {{
     config(
         materialized='incremental',
-        unique_key='detail_key',
+        unique_key=['order_id', 'product_key', 'time_stamp'],
         incremental_strategy='merge'
     )
 }}
@@ -29,7 +29,8 @@ fact_sales_order_detail__raw_location_dedupe AS (
         region_name,
         country_code,
         country_name
-    FROM fact_sales_order_detail__raw_location_source
+    FROM 
+        fact_sales_order_detail__raw_location_source
 ),
 
 currency_mapping AS (
@@ -116,7 +117,7 @@ fact_sales_order_detail__joined__location AS (
             dim.location_country_name = source.country_name
 ),
 
--- Lay customer_key tu dim_customer (lookup tren bang chieu vat ly)
+-- Lay customer_key tu dim_customer
 fact_sales_order_detail__joined__customer AS (
     SELECT
         current_fact.*,
@@ -208,7 +209,7 @@ fact_sales_order_detail__measurement AS (
 fact_sales_order_detail__normalize_price AS (
     SELECT
         * EXCEPT(price),
-        SAFE_CAST(
+        CAST(
             CASE
                 -- European format: 2.962,00 or 1.234.567,89
                 WHEN REGEXP_CONTAINS(price, r'^\d{1,3}(\.\d{3})+,\d+$')
@@ -241,7 +242,7 @@ fact_sales_order_detail__aggregate_cart AS (
         time_stamp,
         ip,
         AVG(CAST(price AS NUMERIC)) AS price,
-        SUM(SAFE_CAST(amount AS INT64)) AS amount
+        SUM(CAST(amount AS INT64)) AS amount
     FROM
         fact_sales_order_detail__normalize_price
     GROUP BY
@@ -272,16 +273,16 @@ fact_sales_order_detail__get_usd_price AS (
         facts.amount,
         facts.price,
         ROUND(
-            facts.price * fx.rate_to_usd,
+            sales.price * exchange_rate.rate_to_usd,
             2
         ) AS sales_usd_price
     FROM
-        fact_sales_order_detail__aggregate_cart AS facts
+        fact_sales_order_detail__aggregate_cart AS sales
     LEFT JOIN
-        fact_exchange_rate AS fx
+        fact_exchange_rate AS exchange_rate
         ON 
-            facts.currency_key = fx.currency_key AND
-            facts.date_key = fx.date_key
+            sales.currency_key = exchange_rate.currency_key AND
+            sales.date_key = exchange_rate.date_key
 ),
 
 fact_sales_order_detail__rename AS (

@@ -14,12 +14,17 @@ dim_currency__null_handle AS (
 dim_currency__special_row AS (
     SELECT * FROM dim_currency__null_handle
     UNION ALL
-    SELECT -1, 'XNA', 'XNA'
+    SELECT 
+        -1 AS currency_key,
+        'XNA' AS currency_code,
+        'XNA' AS currency_name
 ),
 
 dim_currency__audit AS (
     SELECT
-        *,
+        currency_key,
+        currency_code,
+        currency_name,
         current_date('Asia/Saigon') AS inserted_date,
         'dbt' AS inserted_by,
         current_date('Asia/Saigon') AS updated_date,
