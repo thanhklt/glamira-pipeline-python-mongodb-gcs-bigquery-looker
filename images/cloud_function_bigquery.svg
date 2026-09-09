@@ -1,0 +1,47 @@
+<svg width="800" height="420" viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="420" rx="16" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+  <rect width="800" height="44" rx="16" fill="#1E293B"/>
+  <rect y="28" width="800" height="16" fill="#1E293B"/>
+  <circle cx="26" cy="22" r="6" fill="#EF4444"/>
+  <circle cx="46" cy="22" r="6" fill="#F59E0B"/>
+  <circle cx="66" cy="22" r="6" fill="#10B981"/>
+  <text x="400" y="27" fill="#94A3B8" font-family="monospace" font-size="14" text-anchor="middle" font-weight="bold">Cloud Functions (Serverless) / Eventarc Trigger &amp; BigQuery Ingestion</text>
+
+  <!-- Workflow Diagram -->
+  <g font-family="sans-serif" font-size="13">
+    <!-- Step 1 GCS -->
+    <rect x="40" y="80" width="180" height="90" rx="8" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+    <text x="130" y="115" fill="#38BDF8" font-weight="bold" text-anchor="middle">GCS Event</text>
+    <text x="130" y="140" fill="#94A3B8" font-size="11" text-anchor="middle">object.v1.finalized</text>
+
+    <!-- Arrow 1 -->
+    <path d="M 225 125 L 285 125" stroke="#38BDF8" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+    <!-- Step 2 Cloud Function -->
+    <rect x="290" y="80" width="220" height="90" rx="8" fill="#1E293B" stroke="#A855F7" stroke-width="2"/>
+    <text x="400" y="115" fill="#A855F7" font-weight="bold" text-anchor="middle">Cloud Function</text>
+    <text x="400" y="140" fill="#94A3B8" font-size="11" text-anchor="middle">trigger_bigquery_load</text>
+
+    <!-- Arrow 2 -->
+    <path d="M 515 125 L 575 125" stroke="#A855F7" stroke-width="3" fill="none"/>
+
+    <!-- Step 3 BigQuery Landing -->
+    <rect x="580" y="80" width="180" height="90" rx="8" fill="#1E293B" stroke="#10B981" stroke-width="2"/>
+    <text x="670" y="115" fill="#10B981" font-weight="bold" text-anchor="middle">BigQuery Landing</text>
+    <text x="670" y="140" fill="#94A3B8" font-size="11" text-anchor="middle">dataset: landing</text>
+  </g>
+
+  <!-- Execution Log Panel -->
+  <rect x="40" y="200" width="720" height="190" rx="8" fill="#0B1329" stroke="#334155"/>
+  <rect x="40" y="200" width="720" height="30" rx="8" fill="#1E293B"/>
+  <text x="55" y="220" fill="#94A3B8" font-family="monospace" font-size="12" font-weight="bold">CloudEvent Realtime Execution Logs</text>
+  
+  <g font-family="monospace" font-size="12">
+    <text x="55" y="255" fill="#64748B">[INFO] Received CloudEvent: type=google.cloud.storage.object.v1.finalized</text>
+    <text x="55" y="280" fill="#38BDF8">[INFO] Object: gs://raw_glamira/summary/part_0001.parquet | Content-Type: application/octet-stream</text>
+    <text x="55" y="305" fill="#A855F7">[INFO] Generating Idempotent Job ID: load_raw_mongo_8f3a91c742e9</text>
+    <text x="55" y="330" fill="#F59E0B">[INFO] BigQuery Load Job status: RUNNING -> Source: GCS -> Target: landing.raw_mongo</text>
+    <text x="55" y="355" fill="#10B981">[SUCCESS] Loaded 500,000 rows into glamira-project-502214.landing.raw_mongo in 4.2s</text>
+    <text x="55" y="380" fill="#10B981">[SUCCESS] Execution finished with status OK (200)</text>
+  </g>
+</svg>

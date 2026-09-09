@@ -3,20 +3,23 @@ WITH stg_dim_date__source AS (
     FROM {{source('landing','raw_mongo')}}
 ),
 
-stg_dim_date__get_local_time AS (
-    SELECT local_time
-    FROM stg_dim_date__source
-    WHERE collection = 'checkout_success'
+stg_dim_date__get_time_stamp AS (
+    SELECT 
+        {{parse_epoch_seconds('time_stamp')}} AS time_stamp
+    FROM 
+        stg_dim_date__source
+    WHERE 
+        collection = 'checkout_success'
 ),
 
 -- Trong bigquery local_time dang la string
 stg_dim_date__cast_type AS (
-    SELECT cast(local_time AS datetime) AS local_time
-    FROM stg_dim_date__get_local_time
+    SELECT cast(time_stamp AS datetime) AS time_stamp
+    FROM stg_dim_date__get_time_stamp
 ),
 
 stg_dim_date__get_date AS (
-    SELECT cast(format_date('%Y-%m-%d', local_time) AS date) AS full_date
+    SELECT cast(format_date('%Y-%m-%d', time_stamp) AS date) AS full_date
     FROM stg_dim_date__cast_type
 ),
 

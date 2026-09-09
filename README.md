@@ -1,449 +1,271 @@
-# Glamira E-Commerce End-to-End Data Pipeline & Modern Data Warehouse
+# Data Pipeline with dbt, BigQuery, Cloud Functions, and Looker Studio on GCP
 
-<!-- > **Hệ thống ELT & Modern Data Warehouse toàn diện cho nền tảng thương mại điện tử trang sức quốc tế Glamira:** Thu thập clickstream events từ MongoDB, làm giàu dữ liệu sản phẩm qua web crawler (bypass anti-bot), tra cứu vị trí địa lý từ IP và tỷ giá hối đoái lịch sử, tự động ingest lên Google Cloud Storage & BigQuery qua Serverless Cloud Functions, mô hình hóa dữ liệu chuẩn Kimball (Star Schema, SCD Type 2) bằng dbt và trực quan hóa các chỉ số kinh doanh trên Looker Studio. -->
+This project demonstrates how to build and automate an end-to-end ELT data pipeline and Modern Data Warehouse for the international e-commerce platform Glamira. There are different tools that have been used in this project such as MongoDB (for extracting raw unstructured clickstream events), Python with curl-cffi and Asyncio (a high-performance scraper mimicking Chrome TLS fingerprints to enrich missing product catalog data), IP2Location & Frankfurter API (for offline IP geolocation lookup and historical multi-currency exchange rates), Google Cloud Storage (as a Data Lake storing Snappy-compressed Parquet and JSONL files), Google Cloud Functions (serverless event-driven ingestion into BigQuery), dbt (used for Ralph Kimball Star Schema data modeling, SCD Type 2 customer history tracking, and testing), and Google Looker Studio for executive BI dashboards.
 
----
 
-## 📑 Table of Contents
 
-- [📌 Project Overview](#-project-overview)
-  - [Pipeline giải quyết bài toán gì?](#pipeline-giải-quyết-bài-toán-gì)
-- [🏛️ Architecture](#️-architecture)
-  - [Sơ đồ kiến trúc (Architecture Diagram)](#sơ-đồ-kiến-trúc-architecture-diagram)
-  - [Chi tiết các giai đoạn](#chi-tiết-các-giai-đoạn)
-- [🛠️ Tech Stack](#️-tech-stack)
-- [📂 Project Structure](#-project-structure)
-- [⚙️ Setup & Installation](#️-setup--installation)
-  - [Yêu cầu hệ thống](#yêu-cầu-hệ-thống)
-  - [Cài đặt môi trường](#cài-đặt-môi-trường)
-  - [Chuẩn bị file nhị phân IP2Location](#chuẩn-bị-file-nhị-phân-ip2location)
-  - [Thiết lập biến môi trường (.env)](#thiết-lập-biến-môi-trường-env)
-  - [Cấu hình dbt Profile](#cấu-hình-dbt-profile)
-- [🚀 How to Run](#-how-to-run)
-- [🧩 Data Model](#-data-model)
-  - [Bảng Fact (Fact Tables)](#bảng-fact-fact-tables)
-  - [Bảng Dimension (Dimension Tables)](#bảng-dimension-dimension-tables)
-  - [Tầng Looker Data Mart](#tầng-looker-data-mart)
-- [🧪 Data Quality & Tests](#-data-quality--tests)
-  - [Ràng buộc toàn vẹn & Schema Tests](#ràng-buộc-toàn-vẹn--schema-tests)
-  - [Kiểm soát PII & Data Governance](#kiểm-soát-pii--data-governance)
-  - [Xử lý các trường hợp ngoại lệ](#xử-lý-các-trường-hợp-ngoại-lệ-known-edge-cases)
-- [🤝 Contribution](#-contribution)
+# Project Goals - To try new tools and learn!
+0. There has been a deluge of new tools and technologies in the market accentuating the modern data engineering field, and the best way to keep abreast is to pry them out and do hands-on engineering! In an enterprise e-commerce platform like Glamira—operating across dozens of countries, languages, and currencies—data often arrives in unstructured, nested JSON streams with missing product attributes, heterogeneous data types, and currency mismatches. In this project, we tackle these challenges head-on to design and orchestrate a resilient, scalable, and production-grade Modern Data Warehouse.
 
----
+1. **Data Discovery & Catalog Enrichment** - Extract raw user tracking events from MongoDB and crawl product attributes (SKU, title, category, material, gold weight, pricing) using an asynchronous crawler equipped with Chrome TLS fingerprints.
+2. **Data Geocoding & Multi-Currency Normalization** - Resolve user IP addresses into geographic locations (country, region, city, coordinates) via offline IP2Location DB and fetch historical checkout exchange rates into USD using Frankfurter API combined with Gemini AI currency mapping.
+3. **Data Lake Storage (GCS)** - Resolve heterogeneous BSON leaf types into uniform strings, serialize clickstream data into Snappy-compressed Apache Parquet format, and upload partitions to Google Cloud Storage.
+4. **Serverless Data Loading** - Automate event-driven data ingestion from GCS into Google BigQuery Landing datasets via serverless Google Cloud Functions.
+5. **Data Transformation & Dimensional Modeling** - Use dbt to transform raw data into a Ralph Kimball Star Schema (Fact & Dimension tables) with Slowly Changing Dimensions (SCD Type 2) tracking customer evolution.
+6. **Data Quality & Governance** - Implement comprehensive schema validation using `dbt test` and `dbt_expectations`, while safeguarding sensitive customer data (PII) using BigQuery Data Catalog Policy Tags.
+7. **Business Intelligence & Reporting** - Build analytical Data Marts and connect them to Google Looker Studio to visualize executive KPIs, sales by country, and Month-over-Month (MoM) revenue growth.
 
-## 📌 Project Overview
 
-### Pipeline giải quyết bài toán gì?
-Glamira là thương hiệu trang sức và phụ kiện cao cấp quy mô toàn cầu với mạng lưới storefront trực tuyến hoạt động đa quốc gia, đa ngôn ngữ và thanh toán qua nhiều loại tiền tệ. Toàn bộ hành vi người dùng (clickstream tracking: xem sản phẩm, chọn tùy chọn chất liệu/đá quý, thêm giỏ hàng, đặt hàng thành công...) được ghi nhận dưới dạng JSON/BSON document không cấu trúc trong cơ sở dữ liệu MongoDB (`countly.summary`).
 
-Hệ thống pipeline này được thiết kế để giải quyết các bài toán cốt lõi sau:
+# Data Architecture
 
-1. **Làm giàu dữ liệu danh mục sản phẩm (Product Catalog Enrichment):**
-   - Sự kiện clickstream trong MongoDB chỉ lưu các mã định danh `product_id`, thiếu các thuộc tính quan trọng của sản phẩm như `product_name`, `sku`, `base price`, `min price`, `max price`,... 
-   - **Giải pháp:** Xây dựng Crawler bất đồng bộ với khả năng giả lập TLS fingerprint trình duyệt Chrome (`curl-cffi`) để tự động bóc tách thông tin cấu hình sản phẩm từ URL sản phẩm. Ví dụ: `https://www.glamira.co.uk/catalog/product/view/id/85796`
+The architecture (Data flow) used in this project uses different tools, serverless cloud components, and modern analytics frameworks:
 
-2. **Chuẩn hóa địa lý & tỷ giá hối đoái đa quốc gia:**
-   - Các giao dịch checkout diễn ra trên hàng chục loại tiền tệ bản địa khác nhau (EUR, USD, GBP, SGD, AUD, CHF...).
-   - **Giải pháp:** Sử dụng cơ sở dữ liệu offline `IP2Location` để chuyển đổi IP thành quốc gia, thành phố, tọa độ địa lý; đồng thời tích hợp API `Frankfurter` để tự động truy xuất lịch sử tỷ giá hối đoái USD theo đúng ngày phát sinh giao dịch, kết hợp cùng mô hình Gemini AI để ánh xạ các chuỗi tiền tệ thô sang mã chuẩn.
+<p align="center">
+  <img height="600" src="images/architecture.svg">
+  <h6 align = "center" > Source: Author </h6>
+</p>
 
-3. **Khắc phục giới hạn phân tích của MongoDB (NoSQL) sang Cloud OLAP:**
-   - Dữ liệu MongoDB có cấu trúc nested nhiều tầng, kiểu dữ liệu lá (leaf nodes) không đồng nhất (heterogeneous data types), không tối ưu cho truy vấn phân tích tổng hợp phức tạp (OLAP).
-   - **Giải pháp:** Xây dựng pipeline chuẩn hóa schema, chuyển đổi BSON sang Apache Parquet nạp lên Google Cloud Storage (GCS), kích hoạt Google Cloud Function tự động load vào BigQuery, và dùng dbt để chuyển đổi thành mô hình Star Schema hoàn chỉnh.
----
 
-## 🏛️ Architecture
 
-![Architecture Diagram](images/architecture.svg)
+# Dataset Used 
 
-### Chi tiết các giai đoạn
-1. **Source $\to$ Ingestion:**
-   - **MongoDB:** Extract các document sự kiện theo batching cursor có checkpoint tránh trùng lặp.
-   - **Crawler:** Cào dữ liệu sản phẩm trên website. Mỗi product_id sẽ được lưu trong file `.jsonl` riêng biệt và được cập nhật mỗi khi có thay đổi trên website.
-   - **Enrichment:** Tra cứu IP offline qua file BIN `IP2Location`, lấy tỷ giá ngoại tệ từ Frankfurter API.
-2. **Ingestion $\to$ Storage:**
-   - Dữ liệu MongoDB được chuẩn hóa kiểu dữ liệu lá (BSON leaves $\to$ String) để tránh xung đột schema, lưu dạng Parquet nén Snappy và upload lên GCS.
-   - Các file bổ trợ (`products.jsonl`, `locations.jsonl`, `exchange_rate.jsonl`) được đẩy lên GCS tương ứng.
-3. **Storage $\to$ Warehouse:**
-   - Google Cloud Function bắt sự kiện `google.cloud.storage.object.v1.finalized` (Eventarc / CloudEvent) để khởi chạy BigQuery Load Job idempotent (dựa trên hash ID) vào Landing dataset.
-4. **Transform $\to$ Marts:**
-   - **dbt (Data Build Tool):** Thực hiện chuyển đổi từ `landing` $\to$ `staging` (views làm sạch) $\to$ `warehouse` (tables dimensional) $\to$ `looker` (data marts).
-5. **Warehouse $\to$ BI:**
-   - Kết nối BigQuery tables trong dataset `looker` lên Google Looker Studio để theo dõi KPI, doanh thu theo quốc gia, phân tích tăng trưởng MoM và hành vi khách hàng.
+The data in this project is sourced from the global storefront of **Glamira**, an international luxury jewelry and accessories retailer. Glamira manages dozens of localized country storefronts (`glamira.co.uk`, `glamira.de`, `glamira.com`, etc.) accepting multiple local fiat currencies (USD, EUR, GBP, AUD, SGD, etc.).
 
----
+1. **Clickstream Event Logs (MongoDB `countly.summary`)**:
+   - Contains high-volume, semi-structured interaction logs: product detail views, custom option selections (alloys, gemstones, carats, engravings), add-to-cart events, and completed orders (`checkout_success`).
+   - MongoDB documents are heavily nested, with sparse keys and heterogeneous leaf types.
 
-## 🛠️ Tech Stack
+2. **Catalog Metadata (Web Scraping)**:
+   - Event logs only carry bare `product_id` numbers. Detailed attributes (`sku`, `product_name`, `gold_weight`, `collection`, `category_name`, `min_price`, `max_price`) are extracted directly from storefront URLs using TLS fingerprint-spoofing crawlers.
 
-| Thành phần / Phân tầng | Công nghệ sử dụng | Vai trò & Mục đích |
-| :--- | :--- | :--- |
-| **Ngôn ngữ & Môi trường** | **Python 3.11**, **Poetry** | Quản lý mã nguồn, dependencies và đóng gói CLI tool |
-| **Cơ sở dữ liệu nguồn** | **MongoDB (Countly)**, **PyMongo** | Cơ sở dữ liệu NoSQL lưu trữ toàn bộ event logs thô |
-| **Crawl & Scraping Engine** | **curl-cffi**, **Asyncio** | Crawl storefront Glamira với TLS/HTTP2 fingerprint Chrome |
-| **Làm giàu dữ liệu (Enrichment)** | **IP2Location (LITE DB5)**, **Frankfurter API**, **Gemini API** | Tra cứu vị trí IP, tỷ giá tiền tệ và chuẩn hóa mã ISO 4217 |
-| **Data Lake Storage** | **Google Cloud Storage (GCS)**, **PyArrow (Parquet)** | Lưu trữ trung gian dữ liệu dạng Parquet và JSONL |
-| **Serverless Orchestration** | **Google Cloud Functions**, **Functions Framework** | Event-driven loader tự động đưa dữ liệu GCS vào BigQuery |
-| **Cloud Data Warehouse** | **Google BigQuery** | Kho dữ liệu quy mô lớn (Landing, Staging, Warehouse, Marts) |
-| **Data Transformation** | **dbt-core**, **dbt-bigquery** | Quản lý vòng đời dữ liệu, mô hình hóa Star Schema & SCD Type 2 |
-| **Data Quality & Testing** | **dbt tests**, **dbt_expectations**, **Pytest** | Kiểm thử chất lượng dữ liệu, ràng buộc toàn vẹn và kiểm tra schema |
-| **Bảo mật & Governance** | **BigQuery Policy Tags (Data Catalog)** | Masking và phân quyền cột dữ liệu cá nhân nhạy cảm (PII) |
-| **BI & Analytics** | **Google Looker Studio** | Xây dựng Dashboard báo cáo quản trị và trực quan hóa KPI |
+3. **Geographic & Currency Datasets**:
+   - **IP Geolocation**: Sourced offline from the `IP2LOCATION-LITE-DB5.BIN` database.
+   - **Exchange Rates**: Daily rates fetched against USD from the Frankfurter API for all checkout transaction timestamps.
 
----
 
-## 📂 Project Structure
 
-```text
-glamira-crawl-product/
-├── .env                                  # Biến môi trường kết nối (MongoDB, GCP, Gemini)
-├── pyproject.toml                        # Quản lý thư viện Python cho pipeline chính (Poetry)
-├── poetry.lock                           # Lockfile các dependencies chính
-├── main.py                               # Entrypoint chạy CLI
-│
-├── config/                               # Quản lý cấu hình tập trung
-│   ├── config.py                         # Module load settings và validate cấu hình
-│   └── config.yml                        # Cấu hình crawler, mongo, GCS, concurrency, delay
-│
-├── data/                                 # Lưu trữ dữ liệu cục bộ, SQLite state và file nhị phân
-│   ├── IP2LOCATION-LITE-DB5.BIN          # Database nhị phân IP2Location offline
-│   ├── crawl-state.sqlite3               # SQLite lưu trữ hàng đợi crawl và checkpoint
-│   ├── products.jsonl                    # Dữ liệu sản phẩm sau khi crawl
-│   ├── locations.jsonl                   # Dữ liệu IP đã được giải mã địa lý
-│   └── exchange_rate.jsonl               # Dữ liệu tỷ giá hối đoái lịch sử
-│
-├── glamira_crawl/                        # Module khai phá, crawl và làm giàu dữ liệu
-│   ├── __init__.py
-│   ├── cli.py                            # Giao diện dòng lệnh (CLI subcommands)
-│   ├── crawler.py                        # Engine crawler bất đồng bộ (curl-cffi, session pool)
-│   ├── discovery.py                      # Quét MongoDB để bóc tách product_id và URL
-│   ├── parsing.py                        # Bóc tách react_data_url và payload sản phẩm
-│   ├── state.py                          # Quản trị trạng thái qua SQLite (Pending, Done, Failed)
-│   ├── locations.py                      # Module xử lý đa luồng tra cứu IP sang địa lý
-│   └── exchange_rates.py                 # Tự động tải tỷ giá theo các ngày checkout
-│
-├── load/                                 # Module xuất dữ liệu và nạp lên Cloud
-│   ├── __init__.py
-│   ├── export_to_gcs.py                  # Chuẩn hóa BSON sang Parquet và tải lên GCS
-│   ├── load_to_bigquery.py               # Script hỗ trợ gửi job nạp Parquet vào BigQuery
-│   ├── trigger_bigquery.py               # Logic xử lý CloudEvent trigger nạp BigQuery
-│   └── migrate_parquet_to_string.py      # Utility chuẩn hóa dữ liệu cũ
-│
-├── cloud_function/                       # Mã nguồn triển khai Google Cloud Function
-│   ├── main.py                           # Hàm xử lý CloudEvent từ GCS sang BigQuery
-│   └── requirements.txt                  # Dependencies riêng cho Cloud Function runtime
-│
-├── dbt/                                  # Toàn bộ dự án dbt Data Warehouse
-│   ├── pyproject.toml                    # Môi trường Poetry riêng cho dbt-bigquery
-│   └── glamira_warehouse/
-│       ├── dbt_project.yml               # Cấu hình dbt project, materialization & schemas
-│       ├── packages.yml                  # Khai báo dbt package (dbt_expectations)
-│       ├── seeds/
-│       │   └── currency_mapping.csv      # Bảng mapping tiền tệ thô sang chuẩn ISO 4217
-│       ├── scripts/
-│       │   └── generate_currency_mapping.py  # Script dùng Gemini AI tạo file seed tiền tệ
-│       └── models/
-│           ├── staging/                  # Tầng Staging (Views làm sạch & deduplication)
-│           │   ├── _sources.yml          # Định nghĩa nguồn BigQuery Landing tables
-│           │   ├── stg_dim_customer.sql  # Xử lý sự kiện customer, chuẩn bị SCD2
-│           │   ├── stg_dim_product.sql   # Chuẩn hóa dữ liệu sản phẩm từ raw_product
-│           │   ├── stg_dim_store.sql     # Chuẩn hóa store domain & code
-│           │   ├── stg_dim_location.sql  # Chuẩn hóa thông tin IP, tọa độ
-│           │   ├── stg_dim_currency.sql  # Chuẩn hóa tiền tệ qua seed
-│           │   ├── stg_dim_date.sql      # Tạo chuỗi thời gian phân tích
-│           │   └── stg_fact_exchange_rate.sql
-│           ├── warehouse/                # Tầng Warehouse (Star Schema Tables)
-│           │   ├── _models.yml           # Documentation, Schema tests, Expectations, PII Tags
-│           │   ├── dim_customer.sql      # SCD Type 2 Customer dimension
-│           │   ├── dim_product.sql       # Product dimension
-│           │   ├── dim_store.sql         # Store dimension
-│           │   ├── dim_location.sql      # Location dimension
-│           │   ├── dim_currency.sql      # Currency dimension
-│           │   ├── dim_date.sql          # Date dimension
-│           │   ├── fact_sales_order_detail.sql # Bảng Fact chi tiết đơn hàng & doanh thu USD
-│           │   └── fact_exchange_rate.sql
-│           └── looker/                   # Tầng Marts tối ưu cho Looker Studio Dashboards
-│               ├── order_by_product.sql
-│               ├── revenue_by_country.sql
-│               ├── revenue_mom_analysis.sql
-│               ├── revenue_order_by_week.sql
-│               └── revenue_aov_customer_analysis.sql
-│
-├── images/                               # Hình ảnh tài liệu và sơ đồ kiến trúc
-│   └── architecture.svg                  # Sơ đồ kiến trúc luồng dữ liệu End-to-End
-│
-└── tests/                                # Bộ kiểm thử tự động Unit Test & Pipeline
-    ├── test_crawler.py
-    ├── test_discovery.py
-    ├── test_exchange_rates.py
-    ├── test_load.py
-    ├── test_locations.py
-    ├── test_parsing.py
-    └── test_state.py
-```
+# Tools and technologies used in this project
 
----
+1. **BigQuery (GCP)** - BigQuery is a fully managed, serverless enterprise data warehouse offered by Google Cloud Platform. It provides high-speed SQL queries across terabyte-scale datasets and separates compute from storage, making it the ideal analytical backbone for our Landing, Staging, Warehouse, and Mart layers.
+2. **Google Cloud Storage (GCS)** - GCS serves as our scalable object store and Data Lake. It securely retains all raw historical snapshots, partitioned Snappy Parquet files, and JSONL enrichment data before warehouse ingestion.
+3. **Google Cloud Functions (2nd Gen)** - A lightweight, event-driven serverless compute platform. We deploy Cloud Functions to listen to GCS `object.v1.finalized` events through Eventarc, executing idempotent loading jobs into BigQuery without running continuous compute instances.
+4. **dbt (Data Build Tool)** - dbt is an open-source transformation workflow engine that enables data teams to build, test, and document data models using standard SQL and software engineering best practices (version control, CI/CD, modularity).
+5. **MongoDB & PyMongo** - A distributed NoSQL document database storing real-time user event streams. PyMongo is used with cursor batching and checkpoint state tracking for incremental extraction.
+6. **curl-cffi & Asyncio** - An asynchronous Python crawling framework utilizing `curl-cffi` to mimic genuine Google Chrome TLS/JA3/HTTP2 fingerprints, safely bypassing Cloudflare and anti-bot protection mechanisms without getting rate-limited.
+7. **IP2Location** - High-speed offline IP intelligence database (`LITE-DB5`) used to geolocate customer IPs into country ISO codes, city names, and coordinates without recurring API costs or network latency.
+8. **Frankfurter API & Gemini AI** - Free financial foreign exchange rate API used to normalize all global checkout revenues into base currency (USD). Google's Gemini AI model is utilized to map dirty, raw currency strings to standard ISO 4217 currency codes.
+9. **Google Looker Studio** - A cloud-native Business Intelligence and dashboard visualization tool directly integrated with BigQuery Data Marts for interactive executive analytics.
+10. **Poetry & Python 3.11** - A modern Python dependency management and packaging tool that eliminates dependency conflicts by enforcing strict lockfiles and isolated virtual environments.
+11. **Git Version Control** - Distributed version control to track project iterations, dbt schemas, and infrastructure code.
 
-## ⚙️ Setup & Installation
 
-### Yêu cầu hệ thống
-- **Hệ điều hành:** Linux, macOS, hoặc Windows.
-- **Python:** Phiên bản $\ge$ 3.11.
-- **Poetry:** Công cụ quản lý package (`pip install poetry`).
-- **Google Cloud SDK (`gcloud`):** Đã cấu hình xác thực với GCP project.
-- **Tài nguyên cần có:** Quyền truy cập cụm MongoDB và file cơ sở dữ liệu `IP2LOCATION-LITE-DB5.BIN`.
 
-### Cài đặt môi trường
+# Implementation
 
-```bash
-# 1. Clone repository
-git clone https://github.com/thanhklt/glamira-crawl-product.git
-cd glamira-crawl-product
+* **Step 1** - Project Environment Setup, Virtual Environments, and GCP Connection.
 
-# 2. Cài đặt dependencies cho Pipeline chính
-poetry install
+  To guarantee dependency isolation between the data crawler, data loader, and dbt transformation models, we structure the workspace into modular packages managed with Poetry:
 
-# 3. Cài đặt dependencies cho dbt
-cd dbt
-poetry install
-cd ..
+<p align="center">
+  <img width="800" src="images/project_structure.svg">
+  <h6 align = "center" > Source: Author </h6>
+</p>
 
-# 4. Tải các gói phụ thuộc dbt packages
-cd dbt/glamira_warehouse
-poetry run dbt deps
-cd ../..
-```
-
-### Chuẩn bị file nhị phân IP2Location
-Tải file `IP2LOCATION-LITE-DB5.BIN` và đặt vào thư mục `data/`:
-```bash
-# Kiểm tra file đã sẵn sàng trong data/
-ls -lh data/IP2LOCATION-LITE-DB5.BIN
-```
-
-### Thiết lập biến môi trường (.env)
-Tạo file `.env` tại thư mục gốc của project:
-```env
-# MongoDB Connection
-MONGODB_URI=mongodb://<HOST>:27017/?authSource=admin
-MONGODB_USERNAME=your_username
-MONGODB_PASSWORD=your_password
-MONGODB_AUTH_SOURCE=admin
-
-# Google Cloud Platform
-GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account-key.json
-GCP_PROJECT_ID=glamira-project-502214
-
-# Gemini API Key (dùng sinh mapping chuẩn hóa mã tiền tệ)
-GEMINI_API_KEY=your_gemini_api_key
-```
-
-### Cấu hình dbt Profile
-Tạo hoặc cập nhật file `~/.dbt/profiles.yml`:
-```yaml
-glamira_warehouse:
-  target: dev
-  outputs:
-    dev:
-      type: bigquery
-      method: oauth # hoặc service-account
-      project: glamira-project-502214
-      dataset: warehouse
-      threads: 8
-      location: asia-southeast1
-      priority: interactive
-```
-
----
-
-## 🚀 How to Run
-
-Quy trình thực thi dữ liệu từ đầu đến cuối (End-to-End Execution):
-
-### Bước 1: Khám phá sản phẩm từ MongoDB (Discovery)
-Quét toàn bộ collection `summary` của MongoDB để tìm các sự kiện có chứa `product_id` và URL tương ứng, đưa vào hàng đợi SQLite:
-```bash
-poetry run glamira-crawl discover
-```
-
-### Bước 2: Thu thập thông tin chi tiết sản phẩm (Crawl)
-Crawl thông tin metadata sản phẩm (chất liệu, đá, trọng lượng, phân loại, giá) từ web Glamira:
-```bash
-poetry run glamira-crawl crawl
-
-# Nếu muốn thử lại các URL bị lỗi tạm thời:
-poetry run glamira-crawl crawl --retry-failed
-```
-
-### Bước 3: Tra cứu vị trí địa lý của IP (Locations)
-Trích xuất danh sách địa chỉ IP duy nhất từ MongoDB và tra cứu qua cơ sở dữ liệu `IP2Location`:
-```bash
-poetry run glamira-crawl locations --workers 16
-```
-*Kết quả xuất ra tại `data/locations.jsonl`.*
-
-### Bước 4: Lấy tỷ giá hối đoái lịch sử (Exchange Rates)
-Thu thập tỷ giá USD theo các ngày phát sinh giao dịch thành công (`checkout_success`):
-```bash
-poetry run glamira-crawl exchange-rates
-```
-*Kết quả xuất ra tại `data/exchange_rate.jsonl`.*
-
-### Bước 5: Chuyển đổi và nạp dữ liệu lên GCS (Load)
-Trích xuất dữ liệu sự kiện từ MongoDB, chuẩn hóa cấu trúc BSON, xuất thành các file Parquet và tải tự động lên Google Cloud Storage:
-```bash
-poetry run glamira-crawl load
-```
-
-### Bước 6: Ingestion vào BigQuery (Event-Driven Cloud Function)
-- Cloud Function tự động lắng nghe sự kiện upload trên GCS bucket `raw_glamira` và nạp vào các bảng Landing của BigQuery (`raw_mongo`, `raw_location`, `raw_product`, `raw_exchange_rate`).
-- *(Tùy chọn thủ công)*: Chạy lệnh nạp thủ công nếu không triển khai Cloud Function:
+  After cloning the repository, install dependencies using Poetry:
   ```bash
-  poetry run python load/load_to_bigquery.py
+  # 1. Install crawler and pipeline core dependencies
+  poetry install
+
+  # 2. Install dbt-bigquery dependencies
+  cd dbt
+  poetry install
+  cd glamira_warehouse && poetry run dbt deps && cd ../..
   ```
 
-### Bước 7: Thực thi dbt Transformation Models
-Chuyển đổi dữ liệu thô thành Data Warehouse và Data Mart:
-```bash
-cd dbt/glamira_warehouse
+  To connect our local machine and the cloud pipeline with Google Cloud Platform, we create a Service Account in GCP IAM with the roles **Storage Admin** and **BigQuery Admin**, and download its JSON credentials key:
 
-# 1. Nạp file seed mapping tiền tệ
-poetry run dbt seed
+<p align="center">
+  <img width="800" src="images/gcp_setup.svg">
+  <h6 align = "center" > Source: Author </h6>
+</p>
 
-# 2. Xây dựng toàn bộ các tầng Staging, Warehouse, Marts
-poetry run dbt run
+  Configure the project secrets in `.env`:
+  ```env
+  # MongoDB Source
+  MONGODB_URI=mongodb://<HOST>:27017/?authSource=admin
+  MONGODB_USERNAME=your_username
+  MONGODB_PASSWORD=your_password
+  MONGODB_AUTH_SOURCE=admin
 
-# 3. Chạy toàn bộ kiểm thử dữ liệu
-poetry run dbt test
-```
+  # Google Cloud Platform
+  GOOGLE_APPLICATION_CREDENTIALS=config/service-account-key.json
+  GCP_PROJECT_ID=glamira-project-502214
 
----
+  # Gemini API (for currency seed mapping)
+  GEMINI_API_KEY=your_gemini_api_key
+  ```
 
-## 🧩 Data Model
+  And configure `~/.dbt/profiles.yml` for dbt BigQuery connection:
+  ```yaml
+  glamira_warehouse:
+    target: dev
+    outputs:
+      dev:
+        type: bigquery
+        method: service-account
+        keyfile: config/service-account-key.json
+        project: glamira-project-502214
+        dataset: warehouse
+        threads: 8
+        location: asia-southeast1
+        priority: interactive
+  ```
 
-Dự án áp dụng phương pháp thiết kế Dimensional Modeling của Ralph Kimball theo mô hình hình sao (Star Schema), xử lý lịch sử khách hàng bằng SCD Type 2 và chuẩn hóa surrogate key mặc định `-1` cho các bản ghi khuyết thiếu (Unknown / Late Arriving Dimensions).
 
-```
-                      ┌───────────────┐
-                      │   dim_date    │
-                      └───────┬───────┘
-                              │
-  ┌───────────────┐           │           ┌───────────────┐
-  │ dim_customer  │           │           │  dim_product  │
-  │   (SCD T2)    │           │           └───────┬───────┘
-  └───────┬───────┘           │                   │
-          │                   │                   │
-          │        ┌──────────┴──────────┐        │
-          └───────►│fact_sales_order_det.│◄───────┘
-                   └──────────┬──────────┘
-          ┌───────────────────┼───────────────────┐
-          │                   │                   │
-  ┌───────▼───────┐   ┌───────▼───────┐   ┌───────▼───────┐
-  │   dim_store   │   │ dim_location  │   │ dim_currency  │
-  └───────────────┘   └───────────────┘   └───────┬───────┘
-                                                  │
-                                          ┌───────▼──────────┐
-                                          │fact_exchange_rate│
-                                          └──────────────────┘
-```
 
-### Bảng Fact (Fact Tables)
+* **Step 2** - Data Extraction, Web Scraping, Geocoding, and Upload to GCS.
 
-#### `fact_sales_order_detail`
-- **Mức độ chi tiết (Grain):** Từng dòng sản phẩm trong đơn hàng thanh toán thành công (`checkout_success`).
-- **Surrogate Keys:** `customer_key`, `product_key`, `store_key`, `location_key`, `currency_key`, `order_date_key`.
-- **Business Key:** `detail_key` (tạo từ mã hash duy nhất của đơn hàng và sản phẩm).
-- **Chỉ số đo lường (Metrics):**
-  - `item_quantity`: Số lượng sản phẩm mua.
-  - `price_original`: Đơn giá bằng đồng tiền bản địa lúc thanh toán.
-  - `exchange_rate`: Tỷ giá hối đoái quy đổi sang USD tại ngày mua.
-  - `price_usd`: Đơn giá quy đổi sang USD.
-  - `subtotal_usd`: Tổng tiền dòng sản phẩm bằng USD ($= \text{price\_usd} \times \text{item\_quantity}$).
+  The data extraction pipeline performs incremental reading and multi-faceted enrichment:
+  - **Discovery**: Scans MongoDB cursor for new `product_id` identifiers and storefront URLs:
+    ```bash
+    poetry run glamira-crawl discover
+    ```
+  - **Asynchronous Crawl**: Uses `curl-cffi` with connection pooling to scrape product titles, collections, materials, and prices:
+    ```bash
+    poetry run glamira-crawl crawl
+    ```
+  - **IP Geocoding & Currency Enrichment**: Looks up geographic locations and historical USD exchange rates:
+    ```bash
+    poetry run glamira-crawl locations --workers 16
+    poetry run glamira-crawl exchange-rates
+    ```
+  - **Parquet Export & GCS Upload**: MongoDB leaf nodes are cast to uniform string types to prevent BigQuery schema mismatch errors, converted into Snappy-compressed Parquet files, and pushed to GCS:
+    ```bash
+    poetry run glamira-crawl load
+    ```
 
-#### `fact_exchange_rate`
-- **Grain:** Tỷ giá của từng mã tiền tệ quy đổi theo ngày so với đồng tiền cơ sở (USD).
-- **Keys:** `date_key`, `currency_key`.
-- **Metrics:** `exchange_rate` (tỷ giá chính thức hoặc tỷ giá điền khuyết từ ngày làm việc gần nhất).
+<p align="center">
+  <img width="800" src="images/gcs_bucket_load.svg">
+  <h6 align = "center" > Source: Author </h6>
+</p>
 
-### Bảng Dimension (Dimension Tables)
 
-#### `dim_customer` (Slowly Changing Dimension Type 2)
-- **Business Key:** `customer_device_id`.
-- **Surrogate Key:** `customer_key` (quản lý từng phiên bản thay đổi của khách hàng, giá trị `-1` đại diện cho Unknown).
-- **Thuộc tính theo dõi:** `customer_user_agent`, `customer_user_id_db`, `customer_email_address` *(gắn policy tag bảo mật PII)*.
-- **SCD2 Tracking:** `customer_version_number`, `start_time`, `end_time`, `is_current` (cờ `true` cho bản ghi hiện hành).
 
-#### `dim_product`
-- **Business Key:** `product_id`.
-- **Surrogate Key:** `product_key`.
-- **Thuộc tính:** `sku`, `product_name`, `gold_weight`, `fixed_silver_weight`, `material_design`, `collection`, `category_name`, `price`, `min_price`, `max_price`.
+* **Step 3** - Serverless Ingestion to BigQuery Landing via Cloud Functions.
 
-#### `dim_store` & `dim_currency`
-- **`dim_store`:** Quản lý `store_id`, `store_code`, `store_domain`.
-- **`dim_currency`:** Quản lý `currency_code` (chuẩn ISO 4217), `currency_name`.
+  Whenever a file is uploaded to the Google Cloud Storage bucket (`gs://raw_glamira/`), an Eventarc trigger activates our serverless Google Cloud Function (`trigger_bigquery_load`).
+  
+  The function computes an idempotent Job ID based on the file hash to prevent duplicate loads, starts a BigQuery Load Job, and inserts raw data into the `landing` dataset (`raw_mongo`, `raw_product`, `raw_location`, `raw_exchange_rate`):
 
-#### `dim_location`
-- **Business Key:** `ip`.
-- **Surrogate Key:** `location_key`.
-- **Thuộc tính:** `city_name`, `region_name`, `country_code`, `country_name`, `latitude`, `longitude`.
+<p align="center">
+  <img width="800" src="images/cloud_function_bigquery.svg">
+  <h6 align = "center" > Source: Author </h6>
+</p>
 
-#### `dim_date`
-- **Key:** `date_key` (định dạng `YYYYMMDD`).
-- **Thuộc tính:** `full_date`, `year`, `quarter`, `month`, `month_name`, `week_of_year`, `day_of_week`, `is_weekend`.
+  Cloud Function implementation snippet (`cloud_function/main.py`):
+  ```python
+  import functions_framework
+  from google.cloud import bigquery
 
-### Tầng Looker Data Mart
-- **`revenue_by_country`:** Tổng hợp doanh thu, giá trị trung bình đơn hàng theo quốc gia.
-- **`revenue_mom_analysis`:** Phân tích tốc độ tăng trưởng doanh thu theo từng tháng (Month-over-Month Growth Rate).
-- **`order_by_product`:** Xếp hạng các sản phẩm, bộ sưu tập bán chạy nhất.
-- **`revenue_order_by_week`:** Xu hướng biến động đơn hàng theo các tuần trong năm.
-- **`revenue_aov_customer_analysis`:** Phân tích giá trị đơn hàng trung bình (AOV) và tần suất mua sắm của khách hàng.
+  client = bigquery.Client()
 
----
+  @functions_framework.cloud_event
+  def trigger_bigquery(cloud_event):
+      data = cloud_event.data
+      bucket = data["bucket"]
+      file_name = data["name"]
 
-## 🧪 Data Quality & Tests
+      if not (file_name.endswith(".parquet") or file_name.endswith(".jsonl")):
+          return
 
-Hệ thống triển khai kiểm thử chất lượng dữ liệu đa tầng bằng **dbt test**, **dbt_expectations** và **BigQuery Data Policy**:
+      # Generate idempotent BigQuery Load Job configuration
+      job_config = bigquery.LoadJobConfig(
+          source_format=bigquery.SourceFormat.PARQUET if file_name.endswith(".parquet") 
+                        else bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+          write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+      )
+      uri = f"gs://{bucket}/{file_name}"
+      table_id = f"{client.project}.landing.raw_mongo"
+      load_job = client.load_table_from_uri(uri, table_id, job_config=job_config)
+      load_job.result()
+      print(f"Loaded {load_job.output_rows} rows from {uri}")
+  ```
 
-### Ràng buộc toàn vẹn & Schema Tests
-- **Not Null & Uniqueness:** Đảm bảo tất cả các surrogate key (`*_key`) và business key không bị null và duy nhất trên các bảng Dimension và Fact.
-- **Compound Key Uniqueness (`dbt_expectations`):**
-  - Kiểm tra tính duy nhất của cặp `(customer_device_id, start_time)` trên `dim_customer` để đảm bảo tính toàn vẹn của SCD Type 2:
+
+
+* **Step 4** - Data Modeling with dbt (Ralph Kimball Star Schema & SCD Type 2).
+
+  With raw data stored in BigQuery landing tables, we use dbt to execute modern dimensional transformations:
+  - **Staging Layer (`staging`)**: Views that cleanse strings, unnest nested arrays, parse timestamps, and handle edge-case deduplication (such as multi-domain store conflicts and weekend currency fallbacks).
+  - **Warehouse Layer (`warehouse`)**: Implements Ralph Kimball's Dimensional Modeling into an analytical **Star Schema**.
+
+<p align="center">
+  <img width="860" src="images/star_schema_model.svg">
+  <h6 align = "center" > Source: Author </h6>
+</p>
+
+  **Key Features of the Dimensional Model:**
+  - **Fact Table (`fact_sales_order_detail`)**: Contains the grain of individual line items purchased during checkout. Stores foreign surrogate keys, units sold, original transaction prices, daily exchange rate, and normalized total values (`price_usd`, `subtotal_usd`).
+  - **SCD Type 2 Customer Dimension (`dim_customer`)**: Tracks changes in customer profiles (device ID, user DB ID, email, user agents) over time using `start_time`, `end_time`, `customer_version_number`, and `is_current` flags.
+  - **Surrogate Key Handling**: Unknown or late-arriving dimensions are defaulted to surrogate key `-1`.
+
+  To run the dbt models and materialize all tables in BigQuery:
+  ```bash
+  cd dbt/glamira_warehouse
+  poetry run dbt seed
+  poetry run dbt run
+  ```
+
+  After running dbt, all Staging views, Star Schema tables, and Looker Marts are cleanly organized in BigQuery:
+
+<p align="center">
+  <img width="800" src="images/bigquery_warehouse_tables.svg">
+  <h6 align = "center" > Source: Author </h6>
+</p>
+
+
+
+* **Step 5** - Data Quality Assurance, dbt Expectations, and Data Governance.
+
+  Data quality is the linchpin of any production data warehouse. In this step, we implement automated testing using `dbt test` and the `dbt_expectations` package:
+  - **Not-Null & Uniqueness**: Validates that all primary surrogate keys across Fact and Dimension tables contain no nulls or duplicates.
+  - **Compound Column Uniqueness (`dbt_expectations`)**: Ensures that each customer version in the SCD Type 2 table has a distinct `(customer_device_id, start_time)` timestamp pair:
     ```yaml
     - dbt_expectations.expect_compound_columns_to_be_unique:
         column_list: ["customer_device_id", "start_time"]
         row_condition: "customer_key != -1"
     ```
-- **Referential Integrity (Foreign Keys):** Mọi surrogate key trong bảng `fact_sales_order_detail` đều được liên kết hợp lệ với các bảng Dimension tương ứng (hoặc trỏ về khóa `-1` nếu dữ liệu đến muộn).
+  - **Referential Integrity**: Guarantees that all foreign keys in `fact_sales_order_detail` link to valid surrogate keys in `dim_product`, `dim_customer`, `dim_store`, `dim_location`, and `dim_currency`.
+  - **PII Data Governance**: Sensitive customer email addresses (`customer_email_address`) are tagged with BigQuery Data Catalog **Policy Tags** (`cus_email`), enforcing column-level encryption and access control.
 
-### Kiểm soát PII & Data Governance
-- Trường `customer_email_address` trong bảng `dim_customer` được gắn chính sách **Policy Tag** của Google Cloud Data Catalog (`cus_email`).
-- Chỉ các tài khoản có quyền `Data Catalog Fine-Grained Reader` mới có thể đọc giá trị nguyên bản, đảm bảo tuân thủ tiêu chuẩn an toàn thông tin cá nhân.
+  Execute all test suites with:
+  ```bash
+  poetry run dbt test
+  ```
 
-### Xử lý các trường hợp ngoại lệ (Known Edge Cases)
-- **Domain Store trùng lặp:** Dùng thuật toán ranking phân định theo độ đầy đủ thông tin để gán một Store duy nhất tại `stg_dim_store.sql`.
-- **Khuyết tỷ giá ngày nghỉ/cuối tuần:** Tự động fallback lấy tỷ giá của ngày làm việc gần nhất liền kề trước đó trong `stg_fact_exchange_rate.sql`.
-- **Anti-Bot & Rate Limit:** Cơ chế retry backoff, xoay vòng User-Agent và TLS fingerprinting giúp quá trình crawl dữ liệu không bị gián đoạn.
+<p align="center">
+  <img width="800" src="images/dbt_test_results.svg">
+  <h6 align = "center" > Source: Author </h6>
+</p>
 
----
 
-## 🤝 Contribution
 
-Mọi sự đóng góp cho dự án đều được hoan nghênh. Xin vui lòng tuân thủ quy trình sau:
+* **Step 6** - Business Intelligence & Executive Dashboard with Google Looker Studio.
 
-1. **Fork** repository về tài khoản cá nhân.
-2. Tạo một branch mới cho tính năng hoặc bản sửa lỗi:
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. Commit các thay đổi với thông điệp rõ ràng tuân thủ conventional commits:
-   ```bash
-   git commit -m "feat: add incremental merge logic for fact_sales_order_detail"
-   ```
-4. Đảm bảo toàn bộ các bài test đều vượt qua:
-   ```bash
-   cd dbt/glamira_warehouse && poetry run dbt test
-   ```
-5. Push branch lên GitHub:
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-6. Tạo một **Pull Request** giải thích chi tiết mục đích và nội dung thay đổi.
+  In the final stage, we build dedicated Data Mart tables inside the `looker` dataset:
+  - `revenue_by_country`: Aggregates total order value, volume, and Average Order Value (AOV) per country.
+  - `revenue_mom_analysis`: Computes monthly revenue growth and Month-over-Month (MoM) growth rates.
+  - `order_by_product`: Identifies best-selling jewelry collections, metals (gold, silver), and gemstone variations.
+  - `revenue_aov_customer_analysis`: Evaluates customer lifetime value and purchase frequency.
+
+  We connect Google Looker Studio directly to BigQuery to visualize executive sales metrics:
+
+<p align="center">
+  <img width="900" src="images/looker_studio_dashboard.svg">
+  <h6 align = "center" > Source: Author </h6>
+</p>
+
+
+
+**The End**

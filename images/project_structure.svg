@@ -1,0 +1,30 @@
+<svg width="800" height="520" viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="520" rx="16" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+  <rect width="800" height="44" rx="16" fill="#1E293B"/>
+  <rect y="28" width="800" height="16" fill="#1E293B"/>
+  <circle cx="26" cy="22" r="6" fill="#EF4444"/>
+  <circle cx="46" cy="22" r="6" fill="#F59E0B"/>
+  <circle cx="66" cy="22" r="6" fill="#10B981"/>
+  <text x="400" y="27" fill="#94A3B8" font-family="monospace" font-size="14" text-anchor="middle" font-weight="bold">glamira-crawl-product / Project File Tree</text>
+  
+  <g font-family="monospace" font-size="13" fill="#F8FAFC">
+    <text x="30" y="80" fill="#38BDF8">glamira-crawl-product/</text>
+    <text x="50" y="108" fill="#94A3B8">├── <tspan fill="#F59E0B">config/</tspan>               <tspan fill="#64748B"># Centralized configuration &amp; delay policies</tspan></text>
+    <text x="50" y="134" fill="#94A3B8">├── <tspan fill="#F59E0B">data/</tspan>                 <tspan fill="#64748B"># IP2Location DB, SQLite checkpoints &amp; jsonl data</tspan></text>
+    <text x="50" y="160" fill="#94A3B8">├── <tspan fill="#38BDF8">glamira_crawl/</tspan>        <tspan fill="#64748B"># Crawl &amp; Enrichment engine (curl-cffi, asyncio)</tspan></text>
+    <text x="80" y="186" fill="#94A3B8">├── crawler.py          <tspan fill="#64748B"># High-concurrency scraper with Chrome TLS fingerprint</tspan></text>
+    <text x="80" y="212" fill="#94A3B8">├── discovery.py        <tspan fill="#64748B"># MongoDB cursor scan for product IDs &amp; URLs</tspan></text>
+    <text x="80" y="238" fill="#94A3B8">├── locations.py        <tspan fill="#64748B"># Multi-threaded offline IP geo lookup</tspan></text>
+    <text x="80" y="264" fill="#94A3B8">└── exchange_rates.py   <tspan fill="#64748B"># Historical checkout currency conversion to USD</tspan></text>
+    <text x="50" y="290" fill="#94A3B8">├── <tspan fill="#38BDF8">load/</tspan>                 <tspan fill="#64748B"># BSON to Snappy Parquet conversion &amp; GCS upload</tspan></text>
+    <text x="50" y="316" fill="#94A3B8">├── <tspan fill="#A855F7">cloud_function/</tspan>       <tspan fill="#64748B"># Serverless Eventarc GCS-to-BigQuery loader</tspan></text>
+    <text x="50" y="342" fill="#94A3B8">├── <tspan fill="#EC4899">dbt/</tspan>                  <tspan fill="#64748B"># Ralph Kimball Data Warehouse transformations</tspan></text>
+    <text x="80" y="368" fill="#94A3B8">└── glamira_warehouse/  <tspan fill="#64748B"># Staging views, Star Schema tables, Looker marts</tspan></text>
+    <text x="50" y="394" fill="#94A3B8">├── <tspan fill="#10B981">tests/</tspan>                <tspan fill="#64748B"># Unit tests for crawler, parser, state &amp; load</tspan></text>
+    <text x="50" y="420" fill="#94A3B8">├── main.py                 <tspan fill="#64748B"># CLI subcommands entrypoint (discover, crawl, load)</tspan></text>
+    <text x="50" y="446" fill="#94A3B8">├── pyproject.toml          <tspan fill="#64748B"># Poetry dependency &amp; virtualenv configuration</tspan></text>
+    <text x="50" y="472" fill="#94A3B8">└── .env                    <tspan fill="#64748B"># Credentials for MongoDB, GCP and Gemini API</tspan></text>
+  </g>
+  <rect x="30" y="485" width="740" height="24" rx="6" fill="#1E293B"/>
+  <text x="45" y="501" fill="#10B981" font-family="monospace" font-size="12">✔ Validated modular architecture for end-to-end data pipeline</text>
+</svg>

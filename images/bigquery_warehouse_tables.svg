@@ -1,0 +1,68 @@
+<svg width="800" height="420" viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="420" rx="16" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+  <rect width="800" height="44" rx="16" fill="#1E293B"/>
+  <rect y="28" width="800" height="16" fill="#1E293B"/>
+  <circle cx="26" cy="22" r="6" fill="#EF4444"/>
+  <circle cx="46" cy="22" r="6" fill="#F59E0B"/>
+  <circle cx="66" cy="22" r="6" fill="#10B981"/>
+  <text x="400" y="27" fill="#94A3B8" font-family="monospace" font-size="14" text-anchor="middle" font-weight="bold">Google BigQuery / Datasets &amp; Transformed Data Mart Hierarchy</text>
+
+  <!-- Left Sidebar: Explorer -->
+  <rect x="25" y="65" width="250" height="330" rx="8" fill="#1E293B" stroke="#334155"/>
+  <text x="40" y="95" fill="#38BDF8" font-family="sans-serif" font-size="13" font-weight="bold">glamira-project-502214</text>
+  
+  <g font-family="monospace" font-size="12" fill="#F8FAFC">
+    <text x="50" y="125" fill="#94A3B8">▼ <tspan fill="#F59E0B">landing</tspan> (Raw GCS Load)</text>
+    <text x="75" y="145" fill="#64748B">└── raw_mongo, raw_product...</text>
+    
+    <text x="50" y="175" fill="#94A3B8">▼ <tspan fill="#38BDF8">staging</tspan> (Cleaned Views)</text>
+    <text x="75" y="195" fill="#64748B">├── stg_dim_customer</text>
+    <text x="75" y="215" fill="#64748B">└── stg_fact_exchange_rate</text>
+
+    <text x="50" y="245" fill="#94A3B8">▼ <tspan fill="#A855F7">warehouse</tspan> (Star Schema)</text>
+    <text x="75" y="265" fill="#10B981">├── dim_customer (SCD2)</text>
+    <text x="75" y="285" fill="#10B981">├── dim_product, dim_store...</text>
+    <text x="75" y="305" fill="#F43F5E">└── fact_sales_order_detail</text>
+
+    <text x="50" y="335" fill="#94A3B8">▼ <tspan fill="#EC4899">looker</tspan> (Data Marts)</text>
+    <text x="75" y="355" fill="#EC4899">├── revenue_by_country</text>
+    <text x="75" y="375" fill="#EC4899">└── revenue_mom_analysis</text>
+  </g>
+
+  <!-- Right Panel: Table Schema Details -->
+  <rect x="295" y="65" width="480" height="330" rx="8" fill="#131D33" stroke="#334155"/>
+  <rect x="295" y="65" width="480" height="35" rx="8" fill="#1E293B"/>
+  <text x="315" y="88" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="bold">Schema: warehouse.fact_sales_order_detail</text>
+
+  <g font-family="monospace" font-size="12">
+    <text x="315" y="125" fill="#38BDF8">detail_key</text>
+    <text x="530" y="125" fill="#94A3B8">STRING</text>
+    <text x="660" y="125" fill="#10B981">REQUIRED</text>
+
+    <text x="315" y="155" fill="#38BDF8">customer_key</text>
+    <text x="530" y="155" fill="#94A3B8">INT64</text>
+    <text x="660" y="155" fill="#10B981">REQUIRED</text>
+
+    <text x="315" y="185" fill="#38BDF8">product_key</text>
+    <text x="530" y="185" fill="#94A3B8">INT64</text>
+    <text x="660" y="185" fill="#10B981">REQUIRED</text>
+
+    <text x="315" y="215" fill="#38BDF8">item_quantity</text>
+    <text x="530" y="215" fill="#94A3B8">INT64</text>
+    <text x="660" y="215" fill="#94A3B8">NULLABLE</text>
+
+    <text x="315" y="245" fill="#38BDF8">price_usd</text>
+    <text x="530" y="245" fill="#94A3B8">NUMERIC</text>
+    <text x="660" y="245" fill="#94A3B8">NULLABLE</text>
+
+    <text x="315" y="275" fill="#38BDF8">subtotal_usd</text>
+    <text x="530" y="275" fill="#94A3B8">NUMERIC</text>
+    <text x="660" y="275" fill="#94A3B8">NULLABLE</text>
+
+    <text x="315" y="305" fill="#38BDF8">order_date_key</text>
+    <text x="530" y="305" fill="#94A3B8">INT64 (Partition)</text>
+    <text x="660" y="305" fill="#10B981">REQUIRED</text>
+  </g>
+  <rect x="315" y="340" width="440" height="35" rx="6" fill="#1E293B"/>
+  <text x="330" y="362" fill="#10B981" font-family="sans-serif" font-size="12">✔ 8 Dimensional Tables + 5 Looker Studio Marts Materialized</text>
+</svg>

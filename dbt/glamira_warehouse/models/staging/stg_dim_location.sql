@@ -5,6 +5,7 @@ WITH stg_dim_location__source AS (
 
 stg_dim_location__rename AS (
     SELECT
+        ip,
         city_name AS location_city_name,
         region_name AS location_region_name,
         country_code AS location_country_code,
@@ -14,6 +15,7 @@ stg_dim_location__rename AS (
 
 stg_dim_location__cast_type AS (
     SELECT
+        CAST(ip AS STRING) AS ip,
         CAST(location_city_name AS STRING) AS location_city_name,
         CAST(location_region_name AS STRING) AS location_region_name,
         CAST(location_country_code AS STRING) AS location_country_code,
@@ -23,6 +25,7 @@ stg_dim_location__cast_type AS (
 
 stg_dim_location__null_handle AS (
     SELECT
+        COALESCE(ip, 'XNA') AS ip,
         COALESCE(location_city_name, 'XNA') AS location_city_name,
         COALESCE(location_region_name, 'XNA') AS location_region_name,
         COALESCE(location_country_code, 'XNA') AS location_country_code,
@@ -32,16 +35,26 @@ stg_dim_location__null_handle AS (
 ),
 
 stg_dim_location__dedupe AS (
-    SELECT DISTINCT *
-    FROM stg_dim_location__null_handle
+    SELECT DISTINCT 
+        ip,
+        location_city_name,
+        location_region_name,
+        location_country_code,
+        location_country_name
+    FROM 
+        stg_dim_location__null_handle
 ),
 
 stg_dim_location__genkey AS (
     SELECT
         farm_fingerprint(concat(location_city_name,'|', location_region_name,'|', location_country_code)) AS location_key,
-        *
-    FROM stg_dim_location__dedupe
+        ip,
+        location_city_name,
+        location_region_name,
+        location_country_code,
+        location_country_name
+    FROM 
+        stg_dim_location__dedupe
 )
 
-SELECT * 
-FROM stg_dim_location__genkey
+SELECT * FROM stg_dim_location__genkey
