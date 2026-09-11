@@ -11,10 +11,7 @@ WITH fact_exchange_rate__source AS (
     FROM {{ref('stg_fact_exchange_rate')}}
 
     {% if is_incremental() %} -- Chỉ chạy nếu là incremental
-    WHERE exchange_rate_key NOT IN (
-        SELECT exchange_rate_key
-        FROM {{ this }}
-    )
+        WHERE date_key > (SELECT MAX(date_key) FROM {{ this }})
     {% endif %}
 ),
 

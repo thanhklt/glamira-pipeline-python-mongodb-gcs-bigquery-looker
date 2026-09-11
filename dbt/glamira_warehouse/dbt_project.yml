@@ -39,6 +39,8 @@ models:
     warehouse:
       +materialized: table
       +schema: warehouse
+    intermediate:
+      +materialized: ephemeral
     looker:
       +materialized: table
       +schema: looker

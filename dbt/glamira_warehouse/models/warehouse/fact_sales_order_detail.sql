@@ -247,10 +247,7 @@ fact_sales_order_detail__incremental AS (
     SELECT *
     FROM fact_sales_order_detail__genkey
     {% if is_incremental() %}
-    WHERE detail_key NOT IN (
-        SELECT detail_key
-        FROM {{ this }}
-    )
+        WHERE time_stamp > (SELECT MAX(time_stamp) FROM {{ this }})
     {% endif %}
 ),
 

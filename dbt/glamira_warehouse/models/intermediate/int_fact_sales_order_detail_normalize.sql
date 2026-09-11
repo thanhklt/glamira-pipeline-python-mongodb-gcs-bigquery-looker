@@ -1,7 +1,3 @@
-{{
-    config(materialized='view')
-}}
-
 WITH int_fact_sales_order_detail__source AS (
     SELECT * FROM {{ ref('stg_fact_sales_order_detail') }}
 ),

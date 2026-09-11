@@ -73,14 +73,6 @@ stg_fact_exchange_rate__dedupe AS (
     FROM stg_fact_exchange_rate__joined
 ),
 
-stg_fact_exchange_rate__rate_round AS (
-    SELECT
-        date_key,
-        currency_key,
-        rate_to_usd
-    FROM stg_fact_exchange_rate__dedupe
-),
-
 stg_fact_exchange_rate__genkey AS (
     SELECT
         FARM_FINGERPRINT(
@@ -93,7 +85,7 @@ stg_fact_exchange_rate__genkey AS (
         date_key,
         currency_key,
         rate_to_usd
-    FROM stg_fact_exchange_rate__rate_round
+    FROM stg_fact_exchange_rate__dedupe
 )
 
 SELECT *
