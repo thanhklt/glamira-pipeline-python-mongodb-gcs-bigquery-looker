@@ -16,8 +16,8 @@ dim_currency__special_row AS (
     UNION ALL
     SELECT 
         -1 AS currency_key,
-        'XNA' AS currency_code,
-        'XNA' AS currency_name
+        'Unknown' AS currency_code,
+        'Unknown' AS currency_name
 ),
 
 dim_currency__audit AS (

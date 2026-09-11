@@ -21,10 +21,10 @@ dim_customer__special_row AS (
     UNION ALL
     SELECT
         -1, 
-        'XNA' AS customer_device_id, 
-        'XNA' AS customer_user_agent, 
-        'XNA' AS customer_user_id_db, 
-        'XNA' AS customer_email_address,
+        'Unknown' AS customer_device_id, 
+        'Unknown' AS customer_user_agent, 
+        'Unknown' AS customer_user_id_db, 
+        'Unknown' AS customer_email_address,
         TIMESTAMP '1900-01-01 00:00:00+00' AS start_time,
         TIMESTAMP '9999-01-01 00:00:00+00' AS end_time,
         FALSE  AS is_current

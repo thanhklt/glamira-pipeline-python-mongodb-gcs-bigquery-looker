@@ -123,7 +123,7 @@ stg_dim_location AS (
 
 int_fact_sales_order_detail__join_location AS (
     SELECT
-        cart.*
+        cart.*,
         COALESCE(loc.location_city_name, 'XNA') AS location_city_name,
         COALESCE(loc.location_region_name, 'XNA') AS location_region_name,
         COALESCE(loc.location_country_code, 'XNA') AS location_country_code,

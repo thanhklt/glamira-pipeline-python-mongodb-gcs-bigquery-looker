@@ -136,6 +136,33 @@ fact_sales_order_detail__joined__date AS (
         ON DATE(current_fact.time_stamp) = dim_date.date_key
 ),
 
+fact_sales_order_detail__dedupe_cart AS (
+    SELECT
+        customer_key,
+        product_key,
+        location_key,
+        currency_key,
+        store_key,
+        order_id,
+        date_key,
+        time_stamp,
+        ip,
+        SUM(CAST(amount AS INT64)) AS sales_amount,
+        AVG(CAST(price AS NUMERIC)) AS sales_local_price
+    FROM
+        fact_sales_order_detail__joined__date
+    GROUP BY
+        customer_key,
+        product_key,
+        location_key,
+        currency_key,
+        store_key,
+        order_id,
+        date_key,
+        time_stamp,
+        ip
+),
+
 -- 7. Quy doi gia tri sang USD tu fact_exchange_rate
 fact_sales_order_detail__get_usd_price AS (
     SELECT
@@ -148,14 +175,14 @@ fact_sales_order_detail__get_usd_price AS (
         sales.date_key,
         sales.time_stamp,
         sales.ip,
-        sales.amount AS sales_amount,
-        sales.price AS sales_local_price,
+        sales_amount,
+        sales_local_price,
         ROUND(
-            sales.price * exchange_rate.rate_to_usd,
+            sales.sales_local_price * exchange_rate.rate_to_usd,
             2
         ) AS sales_usd_price
     FROM
-        fact_sales_order_detail__joined__date AS sales
+        fact_sales_order_detail__dedupe_cart AS sales
     LEFT JOIN
         fact_exchange_rate AS exchange_rate
         ON 

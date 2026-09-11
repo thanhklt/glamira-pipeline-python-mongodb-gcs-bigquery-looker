@@ -28,12 +28,12 @@ dim_date__special_row AS (
     SELECT
         '1970-01-01' AS date_key,
         0 AS day_of_week,
-        'XNA' AS day_name,
+        'Unknown' AS day_name,
         0 AS day_of_month,
         0 AS day_of_year,
         0 AS week_of_year,
         0 AS month_number,
-        'XNA' AS month_name,
+        'Unknown' AS month_name,
         0 AS quarter_number,
         0 AS year_number,
         FALSE AS is_weekend

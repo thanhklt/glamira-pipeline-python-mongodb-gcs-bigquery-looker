@@ -23,10 +23,10 @@ dim_product__special_row AS (
     UNION ALL
     SELECT
         -1 AS product_key,
-        'XNA' AS product_id,
-        'XNA' AS product_name,
-        'XNA' AS product_sku,
-        'XNA' AS product_gender,
+        'Unknown' AS product_id,
+        'Unknown' AS product_name,
+        'Unknown' AS product_sku,
+        'Unknown' AS product_gender,
         NUMERIC '0' AS product_base_price,
         NUMERIC '0' AS product_min_price,
         NUMERIC '0' AS product_max_price

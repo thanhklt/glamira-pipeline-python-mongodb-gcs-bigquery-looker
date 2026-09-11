@@ -2,8 +2,6 @@
 
 This project demonstrates how to build and automate an end-to-end ELT data pipeline and Modern Data Warehouse for the international e-commerce platform Glamira. There are different tools that have been used in this project such as MongoDB (for extracting raw unstructured clickstream events), Python with curl-cffi and Asyncio (a high-performance scraper mimicking Chrome TLS fingerprints to enrich missing product catalog data), IP2Location & Frankfurter API (for offline IP geolocation lookup and historical multi-currency exchange rates), Google Cloud Storage (as a Data Lake storing Snappy-compressed Parquet and JSONL files), Google Cloud Functions (serverless event-driven ingestion into BigQuery), dbt (used for Ralph Kimball Star Schema data modeling, SCD Type 2 customer history tracking, and testing), and Google Looker Studio for executive BI dashboards.
 
-
-
 # Project Goals - To try new tools and learn!
 0. There has been a deluge of new tools and technologies in the market accentuating the modern data engineering field, and the best way to keep abreast is to pry them out and do hands-on engineering! In an enterprise e-commerce platform like Glamira—operating across dozens of countries, languages, and currencies—data often arrives in unstructured, nested JSON streams with missing product attributes, heterogeneous data types, and currency mismatches. In this project, we tackle these challenges head-on to design and orchestrate a resilient, scalable, and production-grade Modern Data Warehouse.
 

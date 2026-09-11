@@ -13,8 +13,8 @@ dim_store__special_row AS (
     UNION ALL
     SELECT 
         -1 AS store_key,
-        'XNA' AS store_id,
-        'XNA' AS store_domain
+        'Unknown' AS store_id,
+        'Unknown' AS store_domain
 ),
 
 dim_store__audit AS (

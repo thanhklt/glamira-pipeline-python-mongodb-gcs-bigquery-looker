@@ -22,14 +22,14 @@ dim_location__special_row AS (
         location_country_name,
         location_country_code
     FROM 
-        dim_location__source
+        dim_location__distinct
     UNION ALL
     SELECT
         -1 AS location_key,
-        'XNA' AS location_city_name,
-        'XNA' AS location_region_name,
-        'XNA' AS location_country_name,
-        'XNA' AS location_country_code
+        'Unknown' AS location_city_name,
+        'Unknown' AS location_region_name,
+        'Unknown' AS location_country_name,
+        'Unknown' AS location_country_code
 ),
 
 dim_location__audit AS (
