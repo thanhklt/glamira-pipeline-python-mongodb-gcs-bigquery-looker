@@ -1,5 +1,7 @@
 # Glamira Analytics Pipeline
 
+[Tiếng Việt](README.md) | [English](README.en.md) | [日本語](README.ja.md)
+
 Xây dựng luồng ELT data pipeline và Modern Data Warehouse hoàn chỉnh với MongoDB, Python (Asyncio & curl-cffi), Google Cloud Storage, Cloud Functions, BigQuery, dbt và Looker Studio.
 
 ## Description
