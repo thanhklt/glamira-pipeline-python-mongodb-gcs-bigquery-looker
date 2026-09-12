@@ -2,7 +2,7 @@
 
 [Tiếng Việt](README.md) | [English](README.en.md) | [日本語](README.ja.md)
 
-An end-to-end ELT data pipeline and Modern Data Warehouse built with MongoDB, Python (Asyncio & curl-cffi), Google Cloud Storage, Cloud Functions, BigQuery, dbt, and Looker Studio.
+An end-to-end ELT data pipeline and Data Warehouse built with MongoDB, Python (Asyncio & curl-cffi), Google Cloud Storage, Cloud Functions, BigQuery, dbt, and Looker Studio.
 
 ## Description
 
