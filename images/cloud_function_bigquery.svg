@@ -40,20 +40,20 @@
   <g font-family="system-ui, -apple-system, sans-serif">
     
     <!-- 3 Source Folders on the Left -->
-    <!-- Folder 1: raw_mongo_string -->
+    <!-- Folder 1: mongo_data_string -->
     <rect x="25" y="66" width="185" height="38" rx="8" fill="url(#mongoGrad)" stroke="#F59E0B" stroke-width="1.5"/>
     <text x="38" y="90" font-size="14">📁</text>
-    <text x="62" y="90" fill="#FBBF24" font-family="monospace" font-size="12" font-weight="bold">raw_mongo_string</text>
+    <text x="62" y="90" fill="#FBBF24" font-family="monospace" font-size="12" font-weight="bold">mongo_data_string</text>
 
-    <!-- Folder 2: raw_location -->
+    <!-- Folder 2: location_data -->
     <rect x="25" y="114" width="185" height="38" rx="8" fill="url(#locGrad)" stroke="#06B6D4" stroke-width="1.5"/>
     <text x="38" y="138" font-size="14">📁</text>
-    <text x="62" y="138" fill="#22D3EE" font-family="monospace" font-size="12" font-weight="bold">raw_location</text>
+    <text x="62" y="138" fill="#22D3EE" font-family="monospace" font-size="12" font-weight="bold">location_data</text>
 
-    <!-- Folder 3: raw_product -->
+    <!-- Folder 3: product_data -->
     <rect x="25" y="162" width="185" height="38" rx="8" fill="url(#prodGrad)" stroke="#EC4899" stroke-width="1.5"/>
     <text x="38" y="186" font-size="14">📁</text>
-    <text x="62" y="186" fill="#F472B6" font-family="monospace" font-size="12" font-weight="bold">raw_product</text>
+    <text x="62" y="186" fill="#F472B6" font-family="monospace" font-size="12" font-weight="bold">product_data</text>
 
     <!-- Convergence lines from 3 folders to GCS Event -->
     <path d="M 210 85 C 235 85, 235 133, 260 133" stroke="#F59E0B" stroke-width="2" stroke-dasharray="3,3" fill="none" opacity="0.85"/>

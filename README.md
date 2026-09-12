@@ -1,4 +1,4 @@
-# Glamira Analytics Pipeline
+# Glamira Analytics Pipeline V1.0
 
 [Tiếng Việt](README.md) | [English](README.en.md) | [日本語](README.ja.md)
 
